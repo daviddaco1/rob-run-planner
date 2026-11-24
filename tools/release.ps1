@@ -11,7 +11,6 @@ $tag = "v$ver"
 npm test; if ($LASTEXITCODE) { throw 'Fallan las pruebas' }
 node tools/gen-rutas.js
 
-Get-Process RobRunPlanner -ErrorAction SilentlyContinue | ForEach-Object { throw 'Cierra Rob Run Planner antes de publicar' }
 dotnet publish app -c Release -o app\out; if ($LASTEXITCODE) { throw 'Falló la compilación' }
 
 $stage = Join-Path $root 'release\RobRunPlanner'
@@ -20,7 +19,7 @@ New-Item -ItemType Directory -Force "$stage\rutas", "$stage\schema" | Out-Null
 Copy-Item app\out\RobRunPlanner.exe, ruta-escalado.html, catalogo.js, core.js, rutas-incluidas.js, README.md, COMO-CREAR-RUTAS.md, DATOS.md, CHANGELOG.md $stage
 Copy-Item ruta-*.json "$stage\rutas"
 Copy-Item schema\ruta.schema.json "$stage\schema"
-Copy-Item app\out\RobRunPlanner.exe $root -Force   # el .exe de la raíz (ignorado por git) para probar en local
+try { Copy-Item app\out\RobRunPlanner.exe $root -Force } catch { Write-Warning 'No se pudo copiar el .exe a la raíz (¿está abierto?)' }  # .exe local para pruebas, ignorado por git
 Remove-Item app\out -Recurse -Force
 $zip = Join-Path $root 'release\RobRunPlanner.zip'
 Compress-Archive -Path "$stage\*" -DestinationPath $zip
