@@ -1,0 +1,301 @@
+{
+  "id": "reempaquetado",
+  "version": 1,
+  "name": "Contrabando: 4 bancos de reempaquetado",
+  "goal": "Workshop con 4 Contraband Workbench · Label Printer y Tool Box en todos · vender cajas al Smuggler",
+  "steps": [
+    {
+      "phase": "Early",
+      "type": "Dinero",
+      "text": "Capital inicial: 150k",
+      "target": 150000,
+      "notes": "El wipe llega a los 7 días: empieza en un servidor recién abierto. Todo el dinero va al título de parcela.",
+      "subs": [
+        "Ponte la máscara (modo Criminal) y roba tiendas pequeñas: gasolinera, farmacia, joyería",
+        "Vende el botín al Fence y coge el dinero del mostrador al momento",
+        "Abre cuenta en el banco como Civil y deposita cada vez que pases de ~50k",
+        "Alternativa con menos riesgo: hacer turnos de policía (equipo gratis)"
+      ]
+    },
+    {
+      "id": "titulo-1",
+      "phase": "Early",
+      "type": "Comprar",
+      "text": "Land Plot Title Nv1 ($150k)",
+      "item": "land_title_1",
+      "target": 150000,
+      "notes": "Si el título no aparece en el inventario, contacta con soporte y dales tu UID (menú Esc, bajo tu nombre).",
+      "subs": [
+        "Laptop > árbol de Lenny > Documentos: investigar el título Nv1 ($50k)",
+        "Comprar el título Nv1 ($100k)",
+        "Comprobar que el título está en el inventario"
+      ]
+    },
+    {
+      "id": "parcela-1",
+      "phase": "Early",
+      "type": "Otro",
+      "text": "Alquilar parcela en distrito nivel 1",
+      "target": 0,
+      "requires": ["titulo-1"],
+      "notes": "Solo se puede alquilar en asentamientos que ya tienen dueño. El tráiler tiene 1 hueco de banco de trabajo.",
+      "subs": [
+        "Buscar un asentamiento nivel 1 con dueño y parcela libre, mejor cerca de un Smuggler y del Sales Center",
+        "Firmar el contrato en el cartel de la parcela",
+        "Colocar la base (tráiler)",
+        "En la pestaña Granja: tipo de base «Tráiler»"
+      ]
+    },
+    {
+      "id": "banco-1",
+      "phase": "Early",
+      "type": "Reempaquetado",
+      "text": "Contraband Workbench 1 ($40k)",
+      "item": "contraband_bench",
+      "target": 40000,
+      "requires": ["parcela-1"],
+      "notes": "Reempaqueta 1 caja cada vez (unos 30 min según pruebas de la comunidad). Ocupa el único hueco de banco del tráiler.",
+      "subs": [
+        "Investigar el banco en Shipments > árbol de Larry > Muebles ($20k)",
+        "Comprar el banco ($20k)",
+        "Colocarlo en la base",
+        "Crear la estación «Banco 1» (Reempaquetado) en la pestaña Granja"
+      ]
+    },
+    {
+      "id": "primeras-cajas",
+      "phase": "Early",
+      "type": "Reempaquetado",
+      "text": "Reempaquetar las primeras 5 cajas",
+      "target": 5,
+      "requires": ["banco-1"],
+      "notes": "Contraband Cargo: ~$10k en Lenny o en el vendedor de carga (~$5k en el Sales Center con descuento de asentamiento). Premium Cargo se vende a ~$35k y Rarity a ~$40k al Smuggler. Cuántas salen de cada tipo no está publicado: apúntalo.",
+      "subs": [
+        "Comprar Contraband Cargo",
+        "Meter la caja en el banco y pulsar «Empezar» en la estación de la pestaña Granja",
+        "Al terminar, vender la caja reempaquetada al Smuggler",
+        "Apuntar cada venta real en la pestaña Granja",
+        "Sumar 1 al progreso de este paso por cada caja"
+      ]
+    },
+    {
+      "phase": "Early",
+      "type": "Otro",
+      "text": "Rutina de reempaquetado (repetir siempre)",
+      "target": 0,
+      "notes": "Marca esta tarea cuando la tengas automatizada. El banco no trabaja en paralelo: cuanto antes metas la siguiente caja, más ganas por hora.",
+      "subs": [
+        "Cuando suene el aviso: sacar la caja y meter la siguiente",
+        "Pulsar «Empezar» otra vez en esa estación",
+        "Vender las cajas al Smuggler y coger el dinero al momento",
+        "Depositar o lavar el dinero"
+      ]
+    },
+    {
+      "id": "printer-1",
+      "phase": "Early",
+      "type": "Reempaquetado",
+      "text": "Label Printer (Uncommon) en el Banco 1 ($45k)",
+      "item": "label_printer_u",
+      "target": 45000,
+      "requires": ["banco-1"],
+      "notes": "+15% de velocidad de reempaquetado.",
+      "subs": [
+        "Investigar la Label Printer Uncommon ($15k)",
+        "Comprarla ($30k) e instalarla en el Banco 1",
+        "Marcar la mejora en la estación de la pestaña Granja"
+      ]
+    },
+    {
+      "id": "workshop",
+      "phase": "Early",
+      "type": "Comprar",
+      "text": "Cambiar la base a Workshop ($200k)",
+      "item": "workshop",
+      "target": 200000,
+      "requires": ["parcela-1"],
+      "notes": "4 huecos de banco de trabajo en vez de 1. Los bancos de carga (Cargo Workbench) comparten esos huecos.",
+      "subs": [
+        "Investigar el Workshop ($125k)",
+        "Comprarlo ($75k) y colocarlo como base",
+        "Recolocar el Banco 1",
+        "En la pestaña Granja: tipo de base «Workshop»"
+      ]
+    },
+    {
+      "id": "bancos",
+      "phase": "Early",
+      "type": "Reempaquetado",
+      "text": "Bancos 2 a 4 ($60k)",
+      "item": "contraband_bench",
+      "target": 60000,
+      "requires": ["workshop"],
+      "notes": "$20k por banco (la investigación ya está pagada). Compra uno cada vez que tengas el dinero: así producen antes.",
+      "subs": [
+        "Banco 2",
+        "Banco 3",
+        "Banco 4",
+        "Crear las estaciones 2 a 4 en la pestaña Granja"
+      ]
+    },
+    {
+      "phase": "Early",
+      "type": "Reempaquetado",
+      "text": "Label Printer (Uncommon) en los bancos 2 a 4 ($90k)",
+      "item": "label_printer_u",
+      "target": 90000,
+      "requires": ["bancos", "printer-1"],
+      "notes": "$30k por banco.",
+      "subs": [
+        "Banco 2",
+        "Banco 3",
+        "Banco 4",
+        "Marcar la mejora en cada estación de la pestaña Granja"
+      ]
+    },
+    {
+      "phase": "Early",
+      "type": "Otro",
+      "text": "Proteger la base",
+      "item": "fuse_u",
+      "target": 0,
+      "notes": "Las cajas guardadas atraen asaltos. Vende a menudo en vez de acumular.",
+      "subs": [
+        "Poner fusibles en el Workshop",
+        "Instalar una alarma (la que avisa al dueño y al clan, si tienes clan)",
+        "Poner un botiquín en la base"
+      ]
+    },
+    {
+      "id": "titulo-2",
+      "phase": "Mid",
+      "type": "Comprar",
+      "text": "Land Plot Title Nv2 ($1M)",
+      "item": "land_title_2",
+      "target": 1000000,
+      "notes": "Requiere laptop tier I y el título Nv1 investigado.",
+      "subs": [
+        "Investigar el título Nv2 ($200k)",
+        "Ahorrar $800k con los 4 bancos",
+        "Comprar el título Nv2"
+      ]
+    },
+    {
+      "id": "distrito-2",
+      "phase": "Mid",
+      "type": "Otro",
+      "text": "Mudarse a distrito nivel 2",
+      "target": 0,
+      "requires": ["titulo-2"],
+      "notes": "La base se muda entera. No se puede con el bloqueo por asalto activo.",
+      "subs": [
+        "Terminar y vender todas las cajas antes de mudarte",
+        "Buscar un asentamiento nivel 2 con dueño y parcela libre",
+        "Firmar el contrato y comprobar que llegan los 4 bancos",
+        "Comprobar que el laptop ya es tier II"
+      ]
+    },
+    {
+      "id": "toolbox-e",
+      "phase": "Mid",
+      "type": "Reempaquetado",
+      "text": "Tool Box (Epic) en los 4 bancos ($950k)",
+      "item": "tool_box_e",
+      "target": 950000,
+      "requires": ["distrito-2"],
+      "notes": "No da velocidad: añade un hueco de caja en cola, así el banco sigue trabajando mientras no estás. Si sueles estar pendiente del aviso, puedes dejarla para después.",
+      "subs": [
+        "Investigar la Tool Box Epic ($150k)",
+        "Banco 1 ($200k)",
+        "Banco 2 ($200k)",
+        "Banco 3 ($200k)",
+        "Banco 4 ($200k)",
+        "Marcar la mejora en cada estación de la pestaña Granja"
+      ]
+    },
+    {
+      "phase": "Mid",
+      "type": "Otro",
+      "text": "Subir notoriedad con el Smuggler",
+      "target": 0,
+      "notes": "El bonus de venta del Smuggler va de +0% a +25% según el nivel (los niveles intermedios no están confirmados).",
+      "subs": [
+        "Vender siempre al mismo Smuggler",
+        "Apuntar tu nivel de notoriedad en la pestaña Granja cuando suba"
+      ]
+    },
+    {
+      "id": "titulo-3",
+      "phase": "Late",
+      "type": "Comprar",
+      "text": "Land Plot Title Nv3 ($3M)",
+      "item": "land_title_3",
+      "target": 3000000,
+      "notes": "Requiere laptop tier II.",
+      "subs": [
+        "Investigar el título Nv3 ($1M)",
+        "Ahorrar $2M",
+        "Comprar el título Nv3"
+      ]
+    },
+    {
+      "id": "distrito-3",
+      "phase": "Late",
+      "type": "Otro",
+      "text": "Mudarse a distrito nivel 3",
+      "target": 0,
+      "requires": ["titulo-3"],
+      "notes": "Hay más asaltos: refuerza la defensa antes.",
+      "subs": [
+        "Terminar y vender todas las cajas antes de mudarte",
+        "Buscar un asentamiento nivel 3 con dueño y parcela libre",
+        "Firmar el contrato y comprobar que el laptop es tier III",
+        "Poner más fusibles"
+      ]
+    },
+    {
+      "phase": "Late",
+      "type": "Reempaquetado",
+      "text": "Label Printer (Legendary) en los 4 bancos ($675k)",
+      "item": "label_printer_l",
+      "target": 675000,
+      "requires": ["distrito-3"],
+      "notes": "+25% de velocidad según una sola fuente. Comprueba en tu banco si de verdad acorta el tiempo antes de comprar las 4.",
+      "subs": [
+        "Investigar la Label Printer Legendary ($75k)",
+        "Banco 1 ($150k)",
+        "Banco 2 ($150k)",
+        "Banco 3 ($150k)",
+        "Banco 4 ($150k)",
+        "Marcar la mejora en cada estación de la pestaña Granja"
+      ]
+    },
+    {
+      "phase": "Late",
+      "type": "Reempaquetado",
+      "text": "Tool Box (Legendary) en los 4 bancos ($1,9M)",
+      "item": "tool_box_l",
+      "target": 1900000,
+      "requires": ["distrito-3", "toolbox-e"],
+      "notes": "Opcional: +2 huecos en cola (una fuente). Solo compensa si pasas mucho tiempo lejos de la base.",
+      "subs": [
+        "Investigar la Tool Box Legendary ($300k)",
+        "Banco 1 ($400k)",
+        "Banco 2 ($400k)",
+        "Banco 3 ($400k)",
+        "Banco 4 ($400k)"
+      ]
+    },
+    {
+      "phase": "Late",
+      "type": "Otro",
+      "text": "META: 4 bancos al máximo",
+      "target": 0,
+      "notes": "Mira en Calculadoras cuánto ganas por hora y qué te frena.",
+      "subs": [
+        "Mantener los 4 bancos siempre trabajando",
+        "Mantener la defensa hasta el wipe"
+      ]
+    }
+  ]
+}

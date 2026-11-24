@@ -1,0 +1,27 @@
+{
+  "name": "Ruta base (datos nov 2026)",
+  "goal": "Parcela en distrito nivel 3 + Grow Room al máximo + asentamiento propio nivel 3",
+  "steps": [
+    { "phase": "Early", "type": "Dinero", "text": "Farmear 150k (vender botín, cargas, trabajo de policía)", "target": 150000, "notes": "Wipe a los 7 días de abrir el servidor: empieza en servidor nuevo. Lava el dinero en el banco para protegerlo de robos." },
+    { "phase": "Early", "type": "Comprar", "text": "Investigar Land Plot Title Nv1 ($50k) en el árbol de Lenny", "target": 0, "notes": "Laptop de comercio > Documentos. Los precios de investigación pueden cambiar según el servidor." },
+    { "phase": "Early", "type": "Comprar", "text": "Comprar Land Plot Title Nv1 ($100k)", "target": 0, "notes": "Desde el parche del 4 nov, alquilar en nivel 1 pide documento en vez de dinero." },
+    { "phase": "Early", "type": "Otro", "text": "Alquilar parcela en asentamiento con dueño (distrito nivel 1)", "target": 0, "notes": "Solo se puede alquilar en asentamientos que ya tienen dueño. La primera base es un tráiler." },
+    { "phase": "Early", "type": "Dinero", "text": "Farmear para el Grow Room + primera mesa (~320k)", "target": 320000, "notes": "Sala: $150k investigación + $100k compra. Grow Table: $30k + $40k (robrunwiki.net)." },
+    { "phase": "Early", "type": "Taller / mejora", "text": "Montar Grow Room + Grow Table", "target": 0, "notes": "Cada bolsa de cosecha se vende a unos $4,000 en el Fence; salen 2-4 bolsas por cosecha." },
+    { "phase": "Early", "type": "Taller / mejora", "text": "Mejora Fan (+12% crecimiento): $100k investigación + $25k", "target": 125000, "notes": "Tier I." },
+
+    { "phase": "Mid", "type": "Comprar", "text": "Investigar Land Plot Title Nv2 ($200k)", "target": 200000, "notes": "Requiere laptop tier I y haber investigado el título Nv1." },
+    { "phase": "Mid", "type": "Comprar", "text": "Comprar Land Plot Title Nv2 ($800k)", "target": 800000, "notes": "" },
+    { "phase": "Mid", "type": "Otro", "text": "Mudarse a una parcela en distrito nivel 2 (laptop tier II)", "target": 0, "notes": "La mudanza transfiere toda la base. No se puede con el bloqueo por asalto activo." },
+    { "phase": "Mid", "type": "Taller / mejora", "text": "Mejora Water Pump (+14%): $200k investigación + $70k", "target": 270000, "notes": "Tier II." },
+    { "phase": "Mid", "type": "Comprar", "text": "Opcional: Settlement Title Nv1 ($100k investigación + $200k)", "target": 300000, "notes": "Asentamiento propio: cobras impuesto a los inquilinos que lavan o compran. Se cobra en persona en la furgoneta y es peligroso." },
+    { "phase": "Mid", "type": "Otro", "text": "Poner fusibles electrónicos en todas las estructuras", "target": 0, "notes": "Más fusibles = más decodificadores para hackear. Protege contra el derecho de desahucio." },
+
+    { "phase": "Late", "type": "Comprar", "text": "Investigar Land Plot Title Nv3 ($1M)", "target": 1000000, "notes": "Requiere laptop tier II, es decir, una parcela en distrito nivel 2." },
+    { "phase": "Late", "type": "Comprar", "text": "Comprar Land Plot Title Nv3 ($2M)", "target": 2000000, "notes": "" },
+    { "phase": "Late", "type": "Otro", "text": "Mudarse a distrito nivel 3 (laptop tier III)", "target": 0, "notes": "Mejores envíos y mercado negro, pero vecinos más duros." },
+    { "phase": "Late", "type": "Taller / mejora", "text": "Mejora UV Lamp (+24%): $500k investigación + $250k", "target": 750000, "notes": "Tier III." },
+    { "phase": "Late", "type": "Comprar", "text": "Investigar Settlement Title Nv2 ($500k) + Nv3 ($2M)", "target": 2500000, "notes": "Para los títulos superiores basta con tener investigado el inferior, no hace falta comprarlo." },
+    { "phase": "Late", "type": "Título", "text": "Comprar Settlement Title Nv3 ($6M) y comprar asentamiento", "target": 6000000, "notes": "Máximo 5 asentamientos por jugador. Nadie puede quitártelo antes del wipe." }
+  ]
+}

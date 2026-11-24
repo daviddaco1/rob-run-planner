@@ -1,0 +1,324 @@
+{
+  "id": "taller-quimico",
+  "version": 1,
+  "name": "Taller químico: laboratorio al máximo",
+  "goal": "Chemical Laboratory con Reactor III, Congelador III, evaporador y refrigerante · vender Hard Crystals al Smuggler",
+  "steps": [
+    {
+      "phase": "Early",
+      "type": "Dinero",
+      "text": "Capital inicial: 150k",
+      "target": 150000,
+      "notes": "El wipe llega a los 7 días: empieza en un servidor recién abierto. Todo el dinero va al título de parcela.",
+      "subs": [
+        "Ponte la máscara (modo Criminal) y roba tiendas pequeñas: gasolinera, farmacia, joyería",
+        "Vende el botín al Fence y coge el dinero del mostrador al momento",
+        "Abre cuenta en el banco como Civil y deposita cada vez que pases de ~50k",
+        "Alternativa con menos riesgo: hacer turnos de policía (equipo gratis)"
+      ]
+    },
+    {
+      "id": "titulo-1",
+      "phase": "Early",
+      "type": "Comprar",
+      "text": "Land Plot Title Nv1 ($150k)",
+      "item": "land_title_1",
+      "target": 150000,
+      "notes": "Si el título no aparece en el inventario, contacta con soporte y dales tu UID (menú Esc, bajo tu nombre).",
+      "subs": [
+        "Laptop > árbol de Lenny > Documentos: investigar el título Nv1 ($50k)",
+        "Comprar el título Nv1 ($100k)",
+        "Comprobar que el título está en el inventario"
+      ]
+    },
+    {
+      "id": "parcela-1",
+      "phase": "Early",
+      "type": "Otro",
+      "text": "Alquilar parcela en distrito nivel 1",
+      "target": 0,
+      "requires": ["titulo-1"],
+      "notes": "Solo se puede alquilar en asentamientos que ya tienen dueño.",
+      "subs": [
+        "Buscar un asentamiento nivel 1 con dueño y parcela libre, mejor apartado: el humo del laboratorio delata la base",
+        "Firmar el contrato en el cartel de la parcela",
+        "Colocar la base"
+      ]
+    },
+    {
+      "phase": "Early",
+      "type": "Dinero",
+      "text": "Ahorrar 365k para el laboratorio",
+      "target": 365000,
+      "notes": "Mínimo para producir: laboratorio $270k + Reactor I $60k + Congelador I $35k.",
+      "subs": [
+        "Seguir con robos o policía y depositar en el banco"
+      ]
+    },
+    {
+      "id": "lab",
+      "phase": "Early",
+      "type": "Taller químico",
+      "text": "Chemical Laboratory ($270k)",
+      "item": "chem_lab",
+      "target": 270000,
+      "requires": ["parcela-1"],
+      "notes": "Edificio con solo 3 de defensa.",
+      "subs": [
+        "Investigar el laboratorio en Shipments > Producción ($160k)",
+        "Comprarlo ($110k)",
+        "Colocarlo con el plano de la parcela",
+        "Crear la estación «Laboratorio» (Taller químico) en la pestaña Granja"
+      ]
+    },
+    {
+      "id": "reactor-1",
+      "phase": "Early",
+      "type": "Taller químico",
+      "text": "Chemical Reactor I ($60k)",
+      "item": "reactor_1",
+      "target": 60000,
+      "requires": ["lab"],
+      "notes": "Unos 60 min por tanda (tiempos de una fuente).",
+      "subs": [
+        "Investigar el Reactor I ($20k)",
+        "Comprarlo ($40k) y colocarlo en el laboratorio",
+        "Poner reactor tier I en la estación de la pestaña Granja"
+      ]
+    },
+    {
+      "id": "congelador-1",
+      "phase": "Early",
+      "type": "Taller químico",
+      "text": "Industrial Freezer I ($35k)",
+      "item": "freezer_1",
+      "target": 35000,
+      "requires": ["lab"],
+      "notes": "4 bandejas. El tiempo de congelado no está claro (6 o ~30 min según la fuente): apunta el tuyo en la estación.",
+      "subs": [
+        "Investigar el congelador I ($15k)",
+        "Comprarlo ($20k) y colocarlo en el laboratorio"
+      ]
+    },
+    {
+      "id": "primer-lote",
+      "phase": "Early",
+      "type": "Taller químico",
+      "text": "Primer lote de Hard Crystals",
+      "target": 0,
+      "requires": ["reactor-1", "congelador-1"],
+      "notes": "Cuántos cristales salen por lote no está publicado: apúntalo en la estación para que la app calcule tu ganancia. Precio al Smuggler: Uncommon ~$30k, Epic ~$45k, Legendary ~$75k. Cada Reagent Canister vale ~$20k vendido al Smuggler: eso es lo que te cuesta gastarlo.",
+      "subs": [
+        "Conseguir Reagent Canisters",
+        "Cargar el reactor y pulsar «Empezar» en la estación de la pestaña Granja",
+        "Pasar el resultado al congelador",
+        "Recoger los cristales",
+        "Apuntar en la estación cuántos cristales salieron y de qué calidad",
+        "Vender al Smuggler y apuntar la venta real"
+      ]
+    },
+    {
+      "phase": "Early",
+      "type": "Otro",
+      "text": "Rutina del laboratorio (repetir siempre)",
+      "target": 0,
+      "notes": "Marca esta tarea cuando la tengas automatizada.",
+      "subs": [
+        "Cuando suene el aviso: pasar al congelador o recoger cristales",
+        "Volver a cargar el reactor y pulsar «Empezar»",
+        "Vender los cristales al Smuggler y coger el dinero al momento",
+        "Depositar o lavar el dinero"
+      ]
+    },
+    {
+      "phase": "Early",
+      "type": "Taller químico",
+      "text": "Lab Table ($25k, opcional)",
+      "item": "lab_table",
+      "target": 25000,
+      "requires": ["lab"],
+      "notes": "Rompe Hard Crystals en polvo (~10 s). El polvo se vende al Fence: compara precios antes de decidir.",
+      "subs": [
+        "Investigar la Lab Table ($10k)",
+        "Comprarla ($15k) y colocarla"
+      ]
+    },
+    {
+      "phase": "Early",
+      "type": "Otro",
+      "text": "Proteger el laboratorio",
+      "item": "fuse_u",
+      "target": 0,
+      "notes": "El laboratorio solo tiene 3 de defensa y el humo se ve de lejos. No acumules cristales: vende a menudo.",
+      "subs": [
+        "Poner fusibles en el laboratorio y en la base",
+        "Instalar una alarma (la que avisa al dueño y al clan, si tienes clan)",
+        "Poner un botiquín en la base"
+      ]
+    },
+    {
+      "id": "titulo-2",
+      "phase": "Mid",
+      "type": "Comprar",
+      "text": "Land Plot Title Nv2 ($1M)",
+      "item": "land_title_2",
+      "target": 1000000,
+      "notes": "Requiere laptop tier I y el título Nv1 investigado.",
+      "subs": [
+        "Investigar el título Nv2 ($200k)",
+        "Ahorrar $800k con el laboratorio",
+        "Comprar el título Nv2"
+      ]
+    },
+    {
+      "id": "distrito-2",
+      "phase": "Mid",
+      "type": "Otro",
+      "text": "Mudarse a distrito nivel 2",
+      "target": 0,
+      "requires": ["titulo-2"],
+      "notes": "La base se muda entera. No se puede con el bloqueo por asalto activo.",
+      "subs": [
+        "Terminar el lote y vender los cristales antes de mudarte",
+        "Buscar un asentamiento nivel 2 con dueño y parcela libre",
+        "Firmar el contrato y comprobar que llega el laboratorio",
+        "Comprobar que el laptop ya es tier II"
+      ]
+    },
+    {
+      "id": "reactor-2",
+      "phase": "Mid",
+      "type": "Taller químico",
+      "text": "Chemical Reactor II ($450k)",
+      "item": "reactor_2",
+      "target": 450000,
+      "requires": ["distrito-2", "reactor-1"],
+      "notes": "Unos 53 min por tanda (una fuente).",
+      "subs": [
+        "Investigar el Reactor II ($150k)",
+        "Comprarlo ($300k) y cambiarlo por el I",
+        "Poner reactor tier II en la estación de la pestaña Granja"
+      ]
+    },
+    {
+      "id": "congelador-2",
+      "phase": "Mid",
+      "type": "Taller químico",
+      "text": "Industrial Freezer II ($120k)",
+      "item": "freezer_2",
+      "target": 120000,
+      "requires": ["distrito-2", "congelador-1"],
+      "notes": "6 bandejas.",
+      "subs": [
+        "Investigar el congelador II ($30k)",
+        "Comprarlo ($90k) y cambiarlo por el I"
+      ]
+    },
+    {
+      "phase": "Mid",
+      "type": "Taller químico",
+      "text": "Improved Evaporator ($140k)",
+      "item": "evaporator",
+      "target": 140000,
+      "requires": ["distrito-2", "congelador-1"],
+      "notes": "Congela un 11,7% más rápido.",
+      "subs": [
+        "Investigar el evaporador ($40k)",
+        "Comprarlo ($100k) e instalarlo",
+        "Marcar la mejora en la estación de la pestaña Granja"
+      ]
+    },
+    {
+      "phase": "Mid",
+      "type": "Otro",
+      "text": "Subir notoriedad con el Smuggler",
+      "target": 0,
+      "notes": "El bonus de venta del Smuggler va de +0% a +25% según el nivel (los niveles intermedios no están confirmados).",
+      "subs": [
+        "Vender siempre al mismo Smuggler",
+        "Apuntar tu nivel de notoriedad en la pestaña Granja cuando suba"
+      ]
+    },
+    {
+      "id": "titulo-3",
+      "phase": "Late",
+      "type": "Comprar",
+      "text": "Land Plot Title Nv3 ($3M)",
+      "item": "land_title_3",
+      "target": 3000000,
+      "notes": "Requiere laptop tier II.",
+      "subs": [
+        "Investigar el título Nv3 ($1M)",
+        "Ahorrar $2M",
+        "Comprar el título Nv3"
+      ]
+    },
+    {
+      "id": "distrito-3",
+      "phase": "Late",
+      "type": "Otro",
+      "text": "Mudarse a distrito nivel 3",
+      "target": 0,
+      "requires": ["titulo-3"],
+      "notes": "Hay más asaltos y el laboratorio es frágil: refuerza la defensa antes.",
+      "subs": [
+        "Terminar el lote y vender los cristales antes de mudarte",
+        "Buscar un asentamiento nivel 3 con dueño y parcela libre",
+        "Firmar el contrato y comprobar que el laptop es tier III",
+        "Poner más fusibles en el laboratorio"
+      ]
+    },
+    {
+      "phase": "Late",
+      "type": "Taller químico",
+      "text": "Chemical Reactor III ($1,05M)",
+      "item": "reactor_3",
+      "target": 1050000,
+      "requires": ["distrito-3", "reactor-2"],
+      "notes": "Unos 45 min por tanda (una fuente).",
+      "subs": [
+        "Investigar el Reactor III ($350k)",
+        "Comprarlo ($700k) y cambiarlo por el II",
+        "Poner reactor tier III en la estación de la pestaña Granja"
+      ]
+    },
+    {
+      "phase": "Late",
+      "type": "Taller químico",
+      "text": "Industrial Freezer III ($350k)",
+      "item": "freezer_3",
+      "target": 350000,
+      "requires": ["distrito-3", "congelador-2"],
+      "notes": "8 bandejas.",
+      "subs": [
+        "Investigar el congelador III ($100k)",
+        "Comprarlo ($250k) y cambiarlo por el II"
+      ]
+    },
+    {
+      "phase": "Late",
+      "type": "Taller químico",
+      "text": "Quality Refrigerant ($350k)",
+      "item": "refrigerant",
+      "target": 350000,
+      "requires": ["distrito-3", "congelador-1"],
+      "notes": "Congela un 13% más rápido y se suma al evaporador.",
+      "subs": [
+        "Investigar el refrigerante ($100k)",
+        "Comprarlo ($250k) e instalarlo",
+        "Marcar la mejora en la estación de la pestaña Granja"
+      ]
+    },
+    {
+      "phase": "Late",
+      "type": "Otro",
+      "text": "META: laboratorio al máximo",
+      "target": 0,
+      "notes": "Mira en Calculadoras cuánto ganas por hora y qué te frena.",
+      "subs": [
+        "Mantener el reactor siempre trabajando",
+        "Mantener la defensa hasta el wipe"
+      ]
+    }
+  ]
+}

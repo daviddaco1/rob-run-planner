@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "robrun-planner/ruta.schema.json",
+  "title": "Ruta de Rob Run Planner",
+  "description": "Formato de una ruta para importar en Rob Run Planner (formato 2). La app acepta también {\"routes\": [ruta, ...]} y sanea cualquier valor fuera de rango: este esquema documenta lo que se espera, la validación real está en core.js (normRoute + validateRoute).",
+  "type": "object",
+  "required": ["name", "steps"],
+  "properties": {
+    "format": { "const": "robrun-ruta" },
+    "schema": { "type": "integer", "description": "Versión del formato (2)." },
+    "id": { "type": "string", "description": "Solo rutas incluidas en la app: identificador estable." },
+    "version": { "type": "integer", "minimum": 1, "description": "Solo rutas incluidas: súbela al publicar cambios." },
+    "aliases": { "type": "array", "items": { "type": "string" }, "description": "Solo rutas incluidas: nombres antiguos (migración desde el formato 1)." },
+    "name": { "type": "string", "maxLength": 120 },
+    "goal": { "type": "string", "maxLength": 300 },
+    "draft": { "type": "boolean", "description": "Borrador: puede tener errores y no se puede activar hasta corregirlos." },
+    "have": { "type": "array", "items": { "$ref": "#/$defs/itemId" }, "description": "Elementos del catálogo que el jugador ya tiene (cuentan como requisito cumplido)." },
+    "steps": { "type": "array", "maxItems": 500, "items": { "$ref": "#/$defs/step" } }
+  },
+  "$defs": {
+    "itemId": { "type": "string", "description": "id de un elemento de catalogo.js (p. ej. land_title_2, grow_table, uv_lamp)." },
+    "step": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 40, "description": "Necesario solo si otro paso depende de este (requires)." },
+        "phase": { "enum": ["Early", "Mid", "Late"], "default": "Early" },
+        "type": { "enum": ["Dinero", "Comprar", "Conseguir item", "Craftear", "Taller / mejora", "Título", "Plantas", "Reempaquetado", "Taller químico", "Otro"], "default": "Otro" },
+        "text": { "type": "string", "maxLength": 300 },
+        "target": { "type": "number", "minimum": 0, "description": "Meta numérica; en Plantas, número de plantas." },
+        "progress": { "type": "number", "minimum": 0 },
+        "done": { "type": "boolean", "description": "Marcado a mano. Ignorado en Plantas." },
+        "notes": { "type": "string", "maxLength": 5000 },
+        "subs": { "type": "array", "maxItems": 200, "items": { "oneOf": [ { "type": "string" }, { "type": "object", "properties": { "text": { "type": "string" }, "done": { "type": "boolean" } }, "required": ["text"] } ] } },
+        "q": { "enum": ["g", "p", "o"], "default": "p", "description": "Plantas: calidad mínima (verde, morada, dorada)." },
+        "down": { "type": "boolean", "description": "Plantas: acepta calidad inferior de forma provisional." },
+        "item": { "$ref": "#/$defs/itemId" },
+        "requires": { "type": "array", "items": { "type": "string" }, "description": "ids de pasos de esta ruta que deben completarse antes." }
+      }
+    }
+  }
+}

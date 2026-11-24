@@ -1,0 +1,13 @@
+{
+  "name": "rob-run-planner",
+  "version": "2.1.0",
+  "private": true,
+  "description": "Planificador externo y manual para ROB RUN (sin dependencias). Solo scripts de pruebas.",
+  "scripts": {
+    "test": "node --test \"tests/*.test.js\"",
+    "test:e2e": "node tests/e2e-edge.mjs",
+    "test:webview2": "node tests/e2e-webview2.mjs",
+    "test:all": "node --test \"tests/*.test.js\" && node tests/e2e-edge.mjs && node tests/e2e-webview2.mjs",
+    "rutas": "node tools/gen-rutas.js"
+  }
+}

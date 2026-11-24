@@ -1,0 +1,23 @@
+# Compilados (el .exe se publica en las Releases de GitHub, no en el repo)
+*.exe
+app/bin/
+app/obj/
+app/out/
+release/
+*.zip
+
+# Accesos directos y archivos locales del usuario
+*.lnk
+aviso.wav
+.robrun-write-test
+
+# Herramientas / editores
+node_modules/
+.vs/
+.vscode/
+*.user
+.claude/settings.local.json
+.env*
+*.log
+Thumbs.db
+desktop.ini

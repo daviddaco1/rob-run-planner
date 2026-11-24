@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rob Run · Ruta de escalado</title>
+<!-- Herramienta 100% externa y manual: no lee ni toca el juego. Datos solo en este equipo (localStorage) + exportar/importar JSON.
+     Lógica y reglas en core.js, datos del juego en catalogo.js; este archivo solo pinta la interfaz. -->
+<style>
+:root{--bg:#121214;--card:#1c1c21;--line:#2e2e36;--text:#e9e9ec;--muted:#a3a3ad;--acc:#e0b23a;--ok:#4caf7a;--err:#e5534b;--warn:#e0943a;--info:#5b9bd5}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
+main{max-width:980px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:0;color:var(--acc)}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:24px 0 8px}
+h3{font-size:15px;margin:0 0 8px}
+a{color:var(--info)}
+input,select,textarea,button{font:inherit;color:var(--text);background:#25252c;border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+button{cursor:pointer}button:hover:not(:disabled){border-color:var(--acc)}button:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+textarea{width:100%;min-height:34px;resize:vertical;margin-top:6px}
+input[type=number]{width:120px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.grow{flex:1;min-width:160px}
+.card,.step{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px}
+.step.next{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.step.st-done{opacity:.6}
+.step.st-done [data-f=text]{text-decoration:line-through}
+.step.st-prov{border-style:dashed;border-color:var(--warn)}
+.step.st-blocked{border-left:4px solid var(--muted)}
+.step.has-err{border-color:var(--err)}
+.bar{flex:1;min-width:120px;height:8px;background:#2a2a31;border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok)}
+.tools{margin-left:auto;display:flex;gap:4px}
+small,label{color:var(--muted)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.tabs button[aria-selected=true]{border-color:var(--acc);color:var(--acc)}
+.step.ready{opacity:1;border-color:var(--ok);box-shadow:0 0 0 2px var(--ok)}
+.timer{font-variant-numeric:tabular-nums;font-weight:600;min-width:150px}
+.stat b{color:var(--acc)}
+.badge{display:inline-block;font-size:12px;padding:1px 7px;border-radius:10px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.b-done{color:var(--ok);border-color:var(--ok)}.b-prov{color:var(--warn);border-color:var(--warn)}.b-progress{color:var(--acc);border-color:var(--acc)}.b-blocked{color:var(--text);background:#3a3a44}
+.c-confirmado,.c-jugador{color:var(--ok);border-color:var(--ok)}.c-una-fuente{color:var(--info);border-color:var(--info)}.c-discrepancia,.c-estimado{color:var(--warn);border-color:var(--warn)}.c-pendiente{color:var(--err);border-color:var(--err)}
+.issue{display:flex;gap:8px;align-items:flex-start;padding:6px 8px;border-radius:6px;margin:4px 0;background:#202027}
+.issue .ico{font-weight:700;min-width:16px}
+.l-error .ico,.l-error{color:#ff8a84}.l-warn .ico{color:var(--warn)}.l-info .ico{color:var(--info)}
+.issue .msg{flex:1;color:var(--text)}
+.subs{margin-top:8px;padding-left:12px;border-left:2px solid var(--line)}
+.subs summary{cursor:pointer;color:var(--muted);margin-bottom:6px}
+.sub{margin-bottom:4px}
+.sub input.grow{padding:4px 6px}
+.sub.sdone input.grow{text-decoration:line-through;opacity:.6}
+.sub.snext input.grow{border-color:var(--acc)}
+.chip{display:inline-flex;gap:4px;align-items:center;background:#2a2a33;border:1px solid var(--line);border-radius:12px;padding:1px 4px 1px 8px;font-size:13px}
+.chip button{padding:0 6px;border:0;background:none}
+.notice{border-left:4px solid var(--info);background:#1d2430;padding:8px 10px;border-radius:6px;margin:6px 0}
+.notice.n-error{border-color:var(--err);background:#2d1d1d}.notice.n-warn{border-color:var(--warn);background:#2d261b}
+#toasts{position:fixed;right:12px;bottom:12px;display:flex;flex-direction:column;gap:6px;max-width:min(440px,calc(100vw - 24px));z-index:10}
+.toast{background:#26262e;border:1px solid var(--line);border-left:4px solid var(--info);border-radius:8px;padding:10px;box-shadow:0 4px 16px #0008}
+.toast.t-error{border-left-color:var(--err)}.toast.t-ok{border-left-color:var(--ok)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.scroll{overflow-x:auto}
+.empty{color:var(--muted);text-align:center;padding:18px}
+@media (max-width:600px){main{padding:10px}.tools{margin-left:0}input[type=number]{width:96px}}
+</style>
+</head>
+<body>
+<main>
+  <div class="row">
+    <h1>Rob Run · Ruta de escalado</h1>
+    <small id="ver"></small>
+    <span class="tools">
+      <button id="undo" title="Deshacer (Ctrl+Z)" disabled>↶ Deshacer</button>
+      <button id="redo" title="Rehacer (Ctrl+Y)" disabled>↷ Rehacer</button>
+    </span>
+  </div>
+  <div id="notices" aria-live="polite"></div>
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="ruta">Ruta</button>
+    <button role="tab" data-tab="granja">Granja</button>
+    <button role="tab" data-tab="calc">Calculadoras</button>
+    <button role="tab" data-tab="datos">Datos del juego</button>
+    <button role="tab" data-tab="copias">Copias</button>
+  </nav>
+
+  <section id="tab-ruta" role="tabpanel">
+    <div class="card">
+      <div class="row">
+        <label for="routes" class="grow" style="min-width:200px"><select id="routes" style="width:100%" aria-label="Ruta"></select></label>
+        <button id="newRoute">Nueva ruta</button>
+        <button id="dupRoute" title="Copia exacta de la ruta, con su progreso">Duplicar</button>
+        <button id="newWipe" title="Copia la ruta con el progreso a cero">Nuevo wipe</button>
+        <button id="delRoute">Borrar</button>
+        <button id="exportRoute">Exportar ruta</button>
+        <button id="importBtn">Importar</button>
+        <input id="importFile" type="file" accept=".json,application/json" hidden>
+      </div>
+      <div class="row" style="margin-top:8px"><label for="name">Nombre</label><input id="name" class="grow" maxlength="120"></div>
+      <div class="row" style="margin-top:8px"><label for="goal">Meta final</label><input id="goal" class="grow" maxlength="300" placeholder="Ej: título tier 3 + talleres al máximo"></div>
+      <div class="row" style="margin-top:8px">
+        <label for="haveIn" title="Cosas que ya tienes de antes: cuentan como requisito cumplido">Ya tengo</label>
+        <span id="haveChips" class="row"></span>
+        <input id="haveIn" list="catItems" placeholder="Añadir (ej. Land Plot Title Nv1)" style="min-width:220px">
+      </div>
+      <div id="draftBar"></div>
+      <div class="row" style="margin-top:10px"><div class="bar" role="progressbar" aria-label="Progreso de la ruta"><i id="total"></i></div><small id="totalTxt"></small></div>
+      <div class="row stat" id="routeStats" style="margin-top:6px"></div>
+    </div>
+    <div id="issues"></div>
+    <div id="phases"></div>
+  </section>
+
+  <section id="tab-granja" role="tabpanel" hidden>
+    <div class="card">
+      <div class="row">
+        <label>Ciclo base de planta (min) <input type="number" min="1" step="any" data-g="base"></label>
+        <label>Bolsas por planta <input type="number" min="0" step="0.5" data-g="bags"></label>
+        <label>Notoriedad <select data-g="notoriety"></select></label>
+        <label title="Bonus extra (edificios del distrito, eventos...)">Bonus extra % <input type="number" min="0" data-g="bonus" style="width:80px"></label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label>Precio bolsa · verde <input type="number" min="0" data-g="pg"></label>
+        <label>morada <input type="number" min="0" data-g="pp"></label>
+        <label>dorada <input type="number" min="0" data-g="po"></label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label>Mejoras de velocidad <select data-g="stacking">
+          <option value="add">Se suman (60 → 40 min con las 3)</option>
+          <option value="mult">Se multiplican (60 → 38 min)</option>
+          <option value="reduce">Restan tiempo (60 → 30 min)</option></select></label>
+        <label>Tier del laptop <select data-g="tier"><option>1</option><option>2</option><option>3</option></select></label>
+        <label>Base <select data-g="baseType" id="baseType"></select></label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button data-addst="plant">+ Mesa de cultivo</button>
+        <button data-addst="repack">+ Banco de contrabando</button>
+        <button data-addst="chem">+ Taller químico</button>
+        <button id="startAll">Iniciar todas ahora</button>
+        <button id="notify">Activar avisos del navegador</button>
+      </div>
+      <div class="row stat" id="farmSum" style="margin-top:8px"></div>
+      <small>Valores de wikis de fans (nov 2026), ajústalos a tu servidor. Detalle y fuentes en «Datos del juego».</small>
+    </div>
+    <div id="farmIssues"></div>
+    <div id="tables"></div>
+  </section>
+
+  <section id="tab-calc" role="tabpanel" hidden><div id="calcBody"></div></section>
+  <section id="tab-datos" role="tabpanel" hidden><div id="datosBody"></div></section>
+  <section id="tab-copias" role="tabpanel" hidden><div id="copiasBody"></div></section>
+</main>
+<datalist id="catItems"></datalist>
+<div id="toasts" aria-live="assertive"></div>
+
+<script src="catalogo.js"></script>
+<script src="core.js"></script>
+<script src="rutas-incluidas.js" onerror="0"></script>
+<script>
+'use strict';
+const KEY = 'robrun-rutas-v1', BKEY = 'robrun-backups';
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const { esc, clone } = RR;
+const CAT = window.RR_CATALOG;
+const fmt = RR.fmtN;
+const money = n => '$' + fmt(n);
+const hrs = h => h == null ? '—' : h < 1 ? Math.round(h * 60) + ' min' : h < 48 ? h.toFixed(1) + ' h' : (h / 24).toFixed(1) + ' días';
+const STATUS = { done: 'Completada', prov: 'Provisional', progress: 'En progreso', pending: 'Pendiente', blocked: 'Bloqueada' };
+const CONF = { confirmado: 'confirmado', 'una-fuente': 'una fuente', discrepancia: 'discrepancia', jugador: 'comprobado', estimado: 'estimado', pendiente: 'pendiente' };
+const confBadge = c => c ? `<span class="badge c-${esc(c)}" title="Confianza del dato">${esc(CONF[c] || c)}</span>` : '';
+const itemName = id => CAT.items[id]?.name || id;
+const host = window.chrome?.webview;
+
+// ---------- persistencia ----------
+const storage = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); return true; } catch { return false; } },
+};
+function backups() { try { const b = JSON.parse(storage.get(BKEY)); return Array.isArray(b) ? b : []; } catch { return []; } }
+function pushBackup(reason, data) {
+  const list = backups(); list.unshift({ at: Date.now(), reason, data });
+  // máximo 6 copias; si no cabe en el almacenamiento se quitan las más viejas
+  for (let n = Math.min(list.length, 6); n > 0; n--) if (storage.set(BKEY, JSON.stringify(list.slice(0, n)))) return true;
+  return false;
+}
+const notices = [];
+function notice(msg, level = 'info', actions = []) { notices.push({ msg, level, actions }); renderNotices(); }
+function load() {
+  const raw = storage.get(KEY);
+  let data = null;
+  if (raw) {
+    try { data = JSON.parse(raw); }
+    catch { pushBackup('Datos dañados (no se podían leer)', raw);
+      notice('Tus datos guardados estaban dañados y no se podían leer. Se guardó una copia en «Copias» y la app ha empezado de cero.', 'error', [{ label: 'Ver copias', fn: () => showTab('copias') }]); }
+  }
+  const res = RR.migrate(data, window.RUTAS || []);
+  if (data && res.from < RR.SCHEMA) pushBackup(`Antes de actualizar al formato ${RR.SCHEMA}`, raw);
+  for (const n of res.notes) if (data) notice(n, 'info');
+  const bad = RR.checkInvariants(res.state);
+  if (bad.length) notice('Se corrigieron incoherencias al cargar: ' + bad.join(', '), 'warn');
+  // copia diaria automática
+  const last = backups().find(b => b.reason === 'Copia automática diaria');
+  if (raw && data && (!last || Date.now() - last.at > 864e5)) pushBackup('Copia automática diaria', raw);
+  return res.state;
+}
+let S = load();
+let saveFailed = false;
+function save() {
+  const ok = storage.set(KEY, JSON.stringify(S));
+  if (!ok && !saveFailed) notice('No se pudo guardar (almacenamiento lleno o bloqueado). Exporta una copia en «Copias» para no perder cambios.', 'error');
+  saveFailed = !ok;
+}
+for (const n of RR.syncIncluded(S, window.RUTAS || [])) {
+  if (n.kind === 'update') notice(`Hay una versión nueva de la ruta incluida «${n.name}» (v${n.version}). Tu ruta actual y su progreso no se tocan.`, 'info',
+    [{ label: 'Añadir la versión nueva', fn: () => commit(st => RR.addIncludedVersion(st, (window.RUTAS || []).find(b => b.id === n.id)), { allowErrors: true, ok: 'Versión nueva añadida como ruta aparte.' }) }]);
+  else if (n.kind === 'added' && storage.get(KEY)) notice(`Ruta incluida añadida: «${n.name}».`, 'info');
+}
+save();
+window.addEventListener('storage', e => { if (e.key === KEY) notice('Los datos se cambiaron en otra ventana.', 'warn', [{ label: 'Recargar', fn: () => location.reload() }]); });
+
+// ---------- cambios atómicos + deshacer ----------
+// Cada cambio se aplica sobre una copia, se normaliza y se valida. Si mete errores nuevos en una ruta activa (no borrador)
+// se rechaza y el estado no cambia; se ofrece guardarlo como borrador aparte.
+const undoStack = [], redoStack = [];
+const route = (st = S) => st.routes.find(r => r.id === st.cur) || st.routes[0];
+const keyOf = i => i.code + '|' + i.stepId;
+function commit(fn, opt = {}) {
+  const before = S, next = clone(S);
+  try { fn(next); } catch (e) { if (e instanceof RR.UserError) { toast(e.message, 'error'); return false; } throw e; }
+  const norm = RR.normState(next);
+  if (!opt.allowErrors) {
+    const r0 = before.routes.find(r => r.id === norm.cur), r1 = route(norm);
+    if (r1 && !r1.draft) {
+      const old = new Set(r0 && r0.id === r1.id ? RR.errorsOf(RR.validateRoute(r0, before.farm)).map(keyOf) : []);
+      const added = RR.errorsOf(RR.validateRoute(r1, norm.farm)).filter(i => !old.has(keyOf(i)));
+      if (added.length) {
+        toast(`No se aplicó el cambio: ${added[0].msg}`, 'error', opt.noDraft ? [] : [{ label: 'Guardarlo como borrador aparte', fn: () => {
+          commit(st => { const id = st.cur; RR.ops.duplicateRoute(st, id, ' (borrador)'); route(st).draft = true; fn(st); }, { allowErrors: true, ok: 'Cambio guardado en un borrador. Tu ruta activa sigue igual.' }); } }]);
+        render(); return false;
+      }
+    }
+  }
+  { // los límites del juego en la granja se comprueban siempre (también en borradores)
+    const oldF = new Set(RR.errorsOf(RR.validateFarm(before.farm)).map(i => i.code));
+    const addF = RR.errorsOf(RR.validateFarm(norm.farm)).filter(i => !oldF.has(i.code));
+    if (addF.length) { toast(`No se aplicó el cambio: ${addF[0].msg}`, 'error'); render(); return false; }
+  }
+  undoStack.push(before); if (undoStack.length > 60) undoStack.shift(); redoStack.length = 0;
+  S = norm; save(); render();
+  if (opt.ok) toast(opt.ok, 'ok', opt.undoable === false ? [] : [{ label: 'Deshacer', fn: undo }]);
+  return true;
+}
+function undo() { if (!undoStack.length) return; redoStack.push(S); S = undoStack.pop(); save(); render(); }
+function redo() { if (!redoStack.length) return; undoStack.push(S); S = redoStack.pop(); save(); render(); }
+$('#undo').onclick = undo; $('#redo').onclick = redo;
+document.addEventListener('keydown', e => {
+  if (!(e.ctrlKey || e.metaKey) || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName)) return;
+  if (e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+  else if (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey)) { e.preventDefault(); redo(); }
+});
+
+// ---------- avisos en pantalla ----------
+function toast(msg, kind = 'info', actions = []) {
+  const el = document.createElement('div');
+  el.className = `toast t-${kind}`; el.setAttribute('role', kind === 'error' ? 'alert' : 'status');
+  el.innerHTML = `<div>${esc(msg)}</div>${actions.length ? `<div class="row" style="margin-top:6px">${actions.map((a, i) => `<button data-i="${i}">${esc(a.label)}</button>`).join('')}<button data-close>Cerrar</button></div>` : ''}`;
+  el.onclick = e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.i) actions[+b.dataset.i].fn(); el.remove(); };
+  $('#toasts').append(el);
+  setTimeout(() => el.remove(), actions.length ? 15000 : 6000);
+}
+function renderNotices() {
+  $('#notices').innerHTML = notices.map((n, i) => `<div class="notice n-${n.level}"><div class="row"><span class="grow">${esc(n.msg)}</span>
+    ${n.actions.map((a, j) => `<button data-n="${i}" data-a="${j}">${esc(a.label)}</button>`).join('')}<button data-n="${i}" data-x aria-label="Cerrar aviso">✕</button></div></div>`).join('');
+}
+$('#notices').onclick = e => { const b = e.target.closest('button'); if (!b) return; const n = notices[+b.dataset.n]; if (!n) return;
+  if (b.dataset.a !== undefined) n.actions[+b.dataset.a].fn(); notices.splice(+b.dataset.n, 1); renderNotices(); };
+
+// ---------- pestañas ----------
+function showTab(name) {
+  S.tab = name; save();
+  for (const t of ['ruta', 'granja', 'calc', 'datos', 'copias']) $('#tab-' + t).hidden = t !== name;
+  $$('.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === name));
+  render();
+}
+$('.tabs').onclick = e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); };
+
+// ---------- RUTA ----------
+function stepHTML(s, n, ctx) {
+  const st = ctx.st.get(s.id), mine = ctx.issues.filter(i => i.stepId === s.id), it = s.item ? CAT.items[s.item] : null;
+  const pct = s.target > 0 ? Math.min(100, s.progress / s.target * 100) : 0;
+  const errs = mine.some(i => i.level === 'error');
+  const others = ctx.list.filter(x => x.id !== s.id && !s.requires.includes(x.id));
+  return `<div class="step st-${st} ${ctx.next === s ? 'next' : ''} ${errs ? 'has-err' : ''}" data-id="${esc(s.id)}" id="step-${esc(s.id)}">
+    <div class="row">
+      <input type="checkbox" data-f="done" ${RR.isComplete(st) ? 'checked' : ''} ${s.type === 'Plantas' ? 'disabled title="Se completa solo según la pestaña Granja"' : 'title="Marcar como hecho"'} aria-label="Hecho">
+      <b>#${n}</b> <span class="badge b-${st}">${STATUS[st]}</span>
+      <select data-f="type" aria-label="Tipo">${RR.TYPES.map(t => `<option ${t === s.type ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>
+      <select data-f="phase" aria-label="Fase">${RR.PHASES.map(p => `<option ${p === s.phase ? 'selected' : ''}>${p}</option>`).join('')}</select>
+      <input class="grow" data-f="text" value="${esc(s.text)}" placeholder="Qué hacer" maxlength="300" aria-label="Qué hacer">
+      <span class="tools"><button data-act="up" title="Subir" aria-label="Subir">↑</button><button data-act="down" title="Bajar" aria-label="Bajar">↓</button>
+        <button data-act="dup" title="Duplicar paso" aria-label="Duplicar">⧉</button><button data-act="del" title="Borrar paso" aria-label="Borrar">✕</button></span>
+    </div>
+    ${s.type === 'Plantas' ? plantRow(s, ctx) : `<div class="row" style="margin-top:6px">
+      <label>Meta <input type="number" min="0" data-f="target" value="${s.target || ''}" placeholder="opcional"></label>
+      <label>Llevo <input type="number" min="0" data-f="progress" value="${s.progress || ''}"></label>
+      ${s.target > 0 ? `<div class="bar"><i style="width:${pct}%"></i></div><small>${fmt(s.progress)} / ${fmt(s.target)}${ctx.rate > 0 && s.progress < s.target ? ` · ~${hrs((s.target - s.progress) / ctx.rate)} con tu granja` : ''}</small>` : ''}
+    </div>`}
+    <div class="row" style="margin-top:6px">
+      <label>Elemento del juego <input data-f="item" list="catItems" value="${esc(it ? it.name : s.item)}" placeholder="opcional: elige del catálogo" style="min-width:220px"></label>
+      ${it ? `<small>${it.research ? 'investigación ' + money(it.research) + ' · ' : ''}${it.buy ? 'compra ' + money(it.buy) + ' · ' : ''}tier ${it.tier || 1}</small> ${confBadge(it.conf)}
+        ${s.type !== 'Plantas' && s.target !== (it.research || 0) + (it.buy || 0) ? `<button data-act="usePrice" title="Pone la meta a investigación + compra">Meta = ${money((it.research || 0) + (it.buy || 0))}</button>` : ''}
+        ${!s.subs.length ? `<button data-act="useSubs">Subtareas sugeridas</button>` : ''}` : ''}
+      <label style="margin-left:8px">Depende de</label>
+      ${s.requires.map(id => { const r = ctx.list.find(x => x.id === id); return r ? `<span class="chip">#${ctx.list.indexOf(r) + 1} ${esc((r.text || '').slice(0, 40))} <button data-unreq="${esc(id)}" aria-label="Quitar dependencia">✕</button></span>` : ''; }).join('')}
+      ${others.length ? `<select data-f="addreq" aria-label="Añadir dependencia"><option value="">+ paso…</option>${others.map(x => `<option value="${esc(x.id)}">#${ctx.list.indexOf(x) + 1} ${esc((x.text || '(sin texto)').slice(0, 60))}</option>`).join('')}</select>` : ''}
+    </div>
+    ${mine.map(issueHTML).join('')}
+    <textarea data-f="notes" placeholder="Notas: dónde farmear, requisitos, precio..." maxlength="5000" aria-label="Notas">${esc(s.notes)}</textarea>
+    ${subsHTML(s, ctx.next === s, st)}
+  </div>`;
+}
+function plantRow(s, ctx) {
+  const qn = RR.QUAL[s.q].toLowerCase(), any = RR.plantCount(S.farm, 'g'), have = RR.plantCount(S.farm, s.q), st = ctx.st.get(s.id);
+  const msg = st === 'done' ? `✔ ${have}/${s.target} de calidad ${qn} o mejor`
+    : st === 'prov' ? `Vale de momento con calidad inferior · reemplaza ${s.target - have} por ${qn} o mejor cuando puedas`
+    : `${s.down ? any : have}/${s.target} plantas${s.down ? ` (${have} ${qn}+)` : ` ${qn}+`} · faltan ${Math.max(0, s.target - (s.down ? any : have))}`;
+  return `<div class="row" style="margin-top:6px">
+    <label>Calidad mín. <select data-f="q">${Object.entries(RR.QUAL).map(([k, n]) => `<option value="${k}" ${k === s.q ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+    <label>Cantidad <input type="number" min="0" step="1" data-f="target" value="${s.target || ''}"></label>
+    <label><input type="checkbox" data-f="down" ${s.down ? 'checked' : ''}> Acepta calidad inferior</label>
+    <small class="${st === 'prov' ? 'l-warn' : ''}">${msg}</small>
+  </div>`;
+}
+function subsHTML(s, isNext, st) {
+  const done = s.subs.filter(x => x.done).length, first = s.subs.find(x => !x.done);
+  return `<details class="subs" ${st === 'done' ? '' : 'open'}>
+    <summary>Subtareas (${done}/${s.subs.length})</summary>
+    ${s.subs.map(x => `<div class="row sub ${x.done ? 'sdone' : ''} ${isNext && x === first ? 'snext' : ''}" data-sid="${esc(x.id)}">
+      <input type="checkbox" data-sf="done" ${x.done ? 'checked' : ''} aria-label="Subtarea hecha">
+      <input class="grow" data-sf="text" value="${esc(x.text)}" placeholder="Subtarea" maxlength="300" aria-label="Subtarea">
+      <button data-sact="del" title="Borrar subtarea" aria-label="Borrar subtarea">✕</button>
+    </div>`).join('')}
+    <button data-act="addsub">+ Subtarea</button>
+  </details>`;
+}
+const FIXLABEL = { moveBefore: 'Mover antes', dropRequire: 'Quitar esa dependencia', clearItem: 'Quitar referencia', addReq: 'Añadir paso antes', have: 'Ya lo tengo' };
+function issueHTML(i, idx) {
+  const fixes = i.fix ? [i.fix].concat(i.fix.kind === 'addReq' ? [{ kind: 'have', item: i.fix.item }] : []) : [];
+  return `<div class="issue l-${i.level}"><span class="ico">${i.level === 'error' ? '✖' : i.level === 'warn' ? '!' : 'i'}</span><span class="msg">${esc(i.msg)}</span>
+    ${fixes.map(f => `<button data-fix='${esc(JSON.stringify(f))}'>${FIXLABEL[f.kind]}</button>`).join('')}
+    ${i.stepId && idx !== undefined ? `<button data-goto="${esc(i.stepId)}">Ir</button>` : ''}</div>`;
+}
+
+function renderRoute() {
+  const r = route(), list = RR.ordered(r), st = RR.statuses(r, S.farm), issues = RR.validateRoute(r, S.farm);
+  const next = RR.nextStep(r, S.farm), sum = RR.routeSummary(r, S.farm), rate = sum.rate;
+  const ctx = { st, issues, next, list, rate };
+  $('#routes').innerHTML = S.routes.map(x => `<option value="${esc(x.id)}" ${x.id === r.id ? 'selected' : ''}>${x.draft ? '✎ ' : ''}${esc(x.name)}${x.draft ? ' (borrador)' : ''}</option>`).join('');
+  if (document.activeElement !== $('#name')) $('#name').value = r.name;
+  if (document.activeElement !== $('#goal')) $('#goal').value = r.goal;
+  $('#haveChips').innerHTML = r.have.map(id => `<span class="chip">${esc(itemName(id))} <button data-unhave="${esc(id)}" aria-label="Quitar">✕</button></span>`).join('');
+  const errs = RR.errorsOf(issues);
+  $('#draftBar').innerHTML = r.draft ? `<div class="notice n-warn" style="margin-top:8px"><div class="row"><span class="grow">Borrador: puedes guardarlo con errores, pero no activarlo${errs.length ? ` mientras tenga ${errs.length} error(es)` : ''}.</span>
+    <button id="activate" ${errs.length ? `disabled title="Corrige antes: ${esc(errs[0].msg)}"` : ''}>Activar ruta</button></div></div>` : '';
+  const done = sum.counts.done + sum.counts.prov, nextSub = next?.subs.find(x => !x.done);
+  $('#total').style.width = (list.length ? done / list.length * 100 : 0) + '%';
+  $('#totalTxt').textContent = `${done}/${list.length} pasos · ` + (next ? `Siguiente: ${next.text || '(sin texto)'}${nextSub ? ' › ' + nextSub.text : ''}${st.get(next.id) === 'blocked' ? ' (bloqueado: revisa sus dependencias)' : ''}` : list.length ? '¡Meta cumplida!' : 'Ruta vacía');
+  $('#routeStats').innerHTML = [`<span>Pendiente de gastar/ahorrar <b>${money(sum.total)}</b></span>`,
+    `<span>Ritmo de tu granja <b>${money(rate)}/h</b></span>`, `<span>Tiempo estimado <b>${hrs(sum.etaHours)}</b></span>`,
+    sum.counts.blocked ? `<span class="badge b-blocked">${sum.counts.blocked} bloqueado(s)</span>` : '', sum.counts.prov ? `<span class="badge b-prov">${sum.counts.prov} provisional(es)</span>` : ''].join('');
+  const order = { error: 0, warn: 1, info: 2 };
+  const shown = issues.filter(i => i.level !== 'info' || !i.stepId).sort((a, b) => order[a.level] - order[b.level]);
+  $('#issues').innerHTML = shown.length ? `<div class="card"><h3>Revisión de la ruta: ${errs.length} error(es), ${issues.filter(i => i.level === 'warn').length} advertencia(s)</h3>${shown.map((i, k) => issueHTML(i, k)).join('')}</div>` : '';
+  $('#phases').innerHTML = RR.PHASES.map(ph => `<h2>${ph} game</h2>` +
+    (list.filter(s => s.phase === ph).map(s => stepHTML(s, list.indexOf(s) + 1, ctx)).join('') || `<div class="empty">Sin pasos en ${ph}.</div>`) +
+    `<button data-add="${ph}">+ Añadir paso</button>`).join('');
+}
+
+const stepId = el => el.closest('.step')?.dataset.id;
+$('#phases').addEventListener('change', e => {
+  const el = e.target, id = stepId(el); if (!id) return;
+  if (el.dataset.sf) { const sid = el.closest('.sub').dataset.sid;
+    return commit(st => RR.ops.setSub(st, id, sid, el.dataset.sf, el.dataset.sf === 'done' ? el.checked : el.value)); }
+  const f = el.dataset.f; if (!f) return;
+  const s = route().steps.find(x => x.id === id);
+  if (f === 'done') {
+    commit(st => RR.ops.setStep(st, id, 'done', el.checked));
+    const now = RR.baseStatus(route().steps.find(x => x.id === id), S.farm);
+    if (!el.checked && now === 'done') toast(s.target > 0 && s.progress >= s.target ? 'Sigue completada porque «Llevo» llega a la meta. Bájalo para reabrirla.' : 'Sigue completada porque todas sus subtareas están hechas. Desmarca alguna para reabrirla.');
+    return;
+  }
+  if (f === 'item') {
+    const v = el.value.trim(), found = Object.values(CAT.items).find(x => x.name.toLowerCase() === v.toLowerCase() || x.id === v);
+    if (v && !found) { toast(`«${v}» no está en el catálogo. Elige uno de la lista o déjalo vacío.`, 'error'); return render(); }
+    return commit(st => RR.ops.setStep(st, id, 'item', found ? found.id : ''));
+  }
+  if (f === 'addreq') return el.value && commit(st => RR.ops.setStep(st, id, 'requires', [...s.requires, el.value]));
+  if (f === 'type' && s.type === 'Plantas' && el.value !== 'Plantas' && !confirm('Al dejar de ser «Plantas», el paso ya no se completa con la granja y pasa a marcarse a mano. ¿Cambiar?')) return render();
+  if (f === 'target' && s.type !== 'Plantas' && +el.value > 0 && s.progress > +el.value && !confirm(`La nueva meta (${fmt(el.value)}) es menor que lo que llevas (${fmt(s.progress)}): el paso quedará completado. ¿Seguir?`)) return render();
+  commit(st => RR.ops.setStep(st, id, f, el.type === 'checkbox' ? el.checked : el.value));
+});
+$('#phases').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.add) return commit(st => { const s = RR.ops.addStep(st, b.dataset.add); setTimeout(() => $(`#step-${CSS.escape(s.id)} [data-f=text]`)?.focus()); });
+  const id = stepId(b); if (!id) return;
+  if (b.dataset.unreq) return commit(st => RR.ops.setStep(st, id, 'requires', route(st).steps.find(x => x.id === id).requires.filter(x => x !== b.dataset.unreq)));
+  if (b.dataset.sact === 'del') { const sid = b.closest('.sub').dataset.sid; return commit(st => RR.ops.delSub(st, id, sid), { ok: 'Subtarea borrada.' }); }
+  const a = b.dataset.act;
+  if (a === 'addsub') return commit(st => RR.ops.addSub(st, id));
+  if (a === 'up' || a === 'down') return commit(st => RR.ops.moveStep(st, id, a === 'up' ? -1 : 1));
+  if (a === 'dup') return commit(st => RR.ops.duplicateStep(st, id), { ok: 'Paso duplicado.' });
+  if (a === 'usePrice') { const it = CAT.items[route().steps.find(x => x.id === id).item]; return commit(st => RR.ops.setStep(st, id, 'target', (it.research || 0) + (it.buy || 0))); }
+  if (a === 'useSubs') { const s = route().steps.find(x => x.id === id); return commit(st => { for (const t of RR.itemSubs(s.item)) RR.ops.addSub(st, id, t); }); }
+  if (a === 'del') {
+    const deps = RR.ops.dependents(S, id), s = route().steps.find(x => x.id === id);
+    const msg = `¿Borrar «${s.text || 'este paso'}»?` + (deps.length ? `\n\n${deps.length} paso(s) dependen de él y dejarán de hacerlo:\n` + deps.map(d => '· ' + (d.text || '(sin texto)')).join('\n') : '') + '\n\nPuedes deshacerlo después.';
+    if (confirm(msg)) commit(st => RR.ops.deleteStep(st, id), { ok: 'Paso borrado.' });
+  }
+});
+// arreglos sugeridos e «Ir» (en el panel y en cada paso)
+document.addEventListener('click', e => {
+  const b = e.target.closest('button[data-fix],button[data-goto]'); if (!b) return;
+  if (b.dataset.goto) { const el = $(`#step-${CSS.escape(b.dataset.goto)}`); el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); el?.querySelector('input,select')?.focus(); return; }
+  const fix = JSON.parse(b.dataset.fix);
+  commit(st => RR.ops.applyFix(st, fix), { allowErrors: route().draft, ok: 'Arreglo aplicado.' });
+});
+$('#routes').onchange = e => commit(st => RR.ops.setCur(st, e.target.value), { allowErrors: true });
+$('#name').onchange = e => commit(st => RR.ops.setRoute(st, 'name', e.target.value));
+$('#goal').onchange = e => commit(st => RR.ops.setRoute(st, 'goal', e.target.value));
+$('#haveIn').onchange = e => {
+  const v = e.target.value.trim(), it = Object.values(CAT.items).find(x => x.name.toLowerCase() === v.toLowerCase());
+  e.target.value = ''; if (!v) return;
+  if (!it) return toast(`«${v}» no está en el catálogo.`, 'error');
+  commit(st => RR.ops.setRoute(st, 'have', [...route(st).have, it.id]));
+};
+$('#haveChips').onclick = e => { const b = e.target.closest('[data-unhave]'); if (b) commit(st => RR.ops.setRoute(st, 'have', route(st).have.filter(x => x !== b.dataset.unhave))); };
+$('#draftBar').onclick = e => { if (e.target.id === 'activate') commit(st => RR.ops.setRoute(st, 'draft', false), { ok: 'Ruta activada.' }); };
+$('#newRoute').onclick = () => { const name = prompt('Nombre de la ruta'); if (name?.trim()) commit(st => RR.ops.newRoute(st, name), { allowErrors: true, ok: 'Ruta creada.' }); };
+$('#dupRoute').onclick = () => commit(st => RR.ops.duplicateRoute(st, st.cur), { allowErrors: true, ok: 'Ruta duplicada.' });
+$('#newWipe').onclick = () => commit(st => RR.ops.newWipe(st), { allowErrors: true, ok: 'Ruta copiada para el nuevo wipe, con el progreso a cero.' });
+$('#delRoute').onclick = () => {
+  if (S.routes.length < 2) return toast('Debe quedar al menos una ruta. Crea o importa otra antes de borrar esta.', 'error');
+  if (confirm(`¿Borrar «${route().name}»? Podrás deshacerlo mientras no cierres la app.`)) commit(st => RR.ops.deleteRoute(st, st.cur), { allowErrors: true, ok: 'Ruta borrada.' });
+};
+function download(name, obj) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' }));
+  a.download = name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+const fileName = s => s.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 60) || 'ruta';
+$('#exportRoute').onclick = () => {
+  const r = route(), errs = RR.errorsOf(RR.validateRoute(r, S.farm));
+  if (errs.length && !confirm(`La ruta tiene ${errs.length} error(es) («${errs[0].msg}»). Se exportará marcada como borrador. ¿Continuar?`)) return;
+  const out = RR.exportRoute(r); if (errs.length) out.draft = true;
+  download(fileName(r.name) + '.json', out);
+};
+$('#importBtn').onclick = () => $('#importFile').click();
+$('#importFile').onchange = async e => {
+  const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+  if (file.size > 5e6) return toast('El archivo es demasiado grande (máx. 5 MB).', 'error');
+  const res = RR.parseImport(await file.text(), S.farm);
+  if (!res.ok) return toast(res.report.join(' '), 'error');
+  if (res.full && confirm('Este archivo es una copia completa (rutas + granja).\n\nAceptar = RESTAURAR todo (lo actual se guarda antes en «Copias»).\nCancelar = solo AÑADIR sus rutas.')) return restoreFull(res.full);
+  commit(st => { for (const r of res.routes) st.routes.push(r); st.cur = res.routes.at(-1).id; }, { allowErrors: true, ok: `${res.routes.length} ruta(s) importada(s).` });
+  for (const m of res.report) notice(m, 'warn');
+};
+function restoreFull(data, reason = 'Antes de restaurar una copia') {
+  pushBackup(reason, JSON.stringify(S));
+  const res = RR.migrate(typeof data === 'string' ? JSON.parse(data) : data, window.RUTAS || []);
+  undoStack.push(S); S = res.state; save(); render();
+  toast('Copia restaurada. Lo que tenías antes está en «Copias».', 'ok', [{ label: 'Deshacer', fn: undo }]);
+}
+
+// ---------- GRANJA ----------
+const num = (t, k, label, w = 110, step = 'any') => `<label>${label} <input type="number" min="0" step="${step}" data-t="${k}" value="${t[k]}" style="width:${w}px"></label>`;
+function stationBody(t) {
+  const max = CAT.limits.bushes_per_table.value;
+  if (t.kind === 'plant') { const used = t.g + t.p + t.o;
+    return Object.entries(RR.QUAL).map(([k, n]) => `<label>${n} <input type="number" min="0" max="${max}" step="1" data-t="${k}" value="${t[k]}" style="width:70px"></label>`).join('')
+      + `<small>${used}/${max} plantas</small>`; }
+  if (t.kind === 'repack')
+    return `<label>Tool Box <select data-t="box"><option value="">Ninguna</option>${RR.KINDS.repack.slotUpg.map(k => `<option value="${k}" ${t.box === k ? 'selected' : ''}>${esc(itemName(k))} (+${CAT.items[k].effect.slots} en cola)</option>`).join('')}</select></label>`
+      + num(t, 'base', 'Min por caja', 70) + num(t, 'sell', 'Venta caja (notor. 1)') + num(t, 'cost', 'Coste caja');
+  return `<label>Reactor <select data-t="reactor">${[1, 2, 3].map(r => `<option value="${r}" ${t.reactor === r ? 'selected' : ''}>Tier ${r} (${RR.reactorMin(r)} min)</option>`).join('')}</select></label>`
+    + num(t, 'freeze', 'Min congelador', 70)
+    + `<label>Hard Crystals <select data-t="quality">${Object.entries(RR.CRYSTAL).map(([k, n]) => `<option value="${k}" ${t.quality === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>`
+    + num(t, 'crystals', 'Cristales por lote', 70, 1) + num(t, 'value', 'o valor del lote') + num(t, 'cost', 'Coste reactivos');
+}
+function tableHTML(t, issues) {
+  const c = RR.calc(t, S.farm), K = RR.KINDS[t.kind];
+  return `<div class="step" data-id="${esc(t.id)}">
+    <div class="row">
+      <small>${K.label}</small>
+      <input class="grow" data-t="name" value="${esc(t.name)}" maxlength="120" aria-label="Nombre">
+      ${K.upg.map(k => { const it = CAT.items[k], eff = it?.effect?.speed ?? it?.effect?.freeze ?? 0;
+        return `<label title="${esc(it?.notes || '')}"><input type="checkbox" data-t="${k}" ${t.upg[k] ? 'checked' : ''}> ${esc(it?.name || k)} +${Math.round(eff * 1000) / 10}%${(it?.tier || 1) > 1 ? ` <span class="badge">T${it.tier}</span>` : ''}</label>`; }).join('')}
+      <span class="tools"><button data-tact="del" title="Borrar" aria-label="Borrar estación">✕</button></span>
+    </div>
+    <div class="row" style="margin-top:6px">${stationBody(t)}</div>
+    <div class="row stat" style="margin-top:6px">
+      <span>Ciclo <b>${Math.round(c.cycle)} min</b></span>
+      <span>Por ciclo <b>${c.noData ? 'sin datos' : money(c.harvest)}</b></span>
+      <span>Por hora <b>${c.noData ? '—' : money(c.perHour)}</b></span>
+      ${t.kind === 'repack' && c.slots > 1 ? `<span>Cola de ${c.slots} cajas: aguanta <b>${hrs(c.autonomy / 60)}</b> sin atender</span>` : ''}
+      <span>Inversión <b>${money(RR.investment(t))}</b></span>
+      ${c.real != null ? `<span>Real <b>${money(c.real)}</b>/ciclo (${t.log.length} registros) · <b>${money(c.realPerHour)}/h</b></span>` : ''}
+    </div>
+    ${issues.filter(i => i.stationId === t.id).map(i => issueHTML(i)).join('')}
+    <div class="row" style="margin-top:6px">
+      <button data-tact="start">${K.btn}</button>
+      <button data-tact="stop">Parar</button>
+      <span class="timer" data-timer="${esc(t.id)}"></span>
+      <span class="tools"><input type="number" min="0" placeholder="Venta real $" data-log style="width:120px" aria-label="Venta real de este ciclo"><button data-tact="log" title="Apunta lo que sacaste de verdad para comparar con el teórico">Registrar</button></span>
+    </div>
+  </div>`;
+}
+function renderFarm() {
+  const F = S.farm, tot = RR.farmTotals(F), issues = RR.validateFarm(F);
+  $('[data-g=notoriety]').innerHTML = [1, 2, 3, 4, 5].map(n => `<option value="${n}">${n} (Fence +${Math.round(RR.notorietyBonus('fence', n) * 100)}%)</option>`).join('');
+  $('#baseType').innerHTML = Object.entries(CAT.bases).map(([k, b]) => `<option value="${k}">${esc(b.name)} (${b.workbenches} banco${b.workbenches > 1 ? 's' : ''})</option>`).join('');
+  $$('[data-g]').forEach(el => { if (document.activeElement !== el) el.value = F[el.dataset.g]; });
+  $('#tables').innerHTML = F.tables.map(t => tableHTML(t, issues)).join('') || `<div class="empty">No tienes estaciones. Añade una mesa, un banco o un taller arriba.</div>`;
+  $('#farmIssues').innerHTML = issues.filter(i => !i.stationId).map(i => issueHTML(i)).join('');
+  $('#farmSum').innerHTML = `<span>${tot.plant} mesas · ${tot.plants} plantas · ${tot.repack} bancos · ${tot.chem} labs</span><span>Total por hora <b>${money(tot.perHour)}</b></span><span>En marcha <b>${money(tot.runningPerHour)}/h</b></span><span>Por día (24 h) <b>${money(tot.perHour * 24)}</b></span>`;
+  $('#notify').hidden = !!host;
+  tick();
+}
+$('#tab-granja').addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset.g) return commit(st => RR.ops.setFarm(st, el.dataset.g, el.dataset.g === 'stacking' || el.dataset.g === 'baseType' ? el.value : +el.value));
+  if (el.dataset.log !== undefined) return;
+  const f = el.dataset.t, id = el.closest('.step')?.dataset.id; if (!f || !id) return;
+  const t = S.farm.tables.find(x => x.id === id);
+  const v = el.type === 'checkbox' ? el.checked : el.tagName === 'SELECT' && f !== 'box' && f !== 'quality' ? +el.value : el.type === 'number' ? +el.value : el.value;
+  if (t.start && (RR.KINDS[t.kind].upg.includes(f) || f === 'reactor' || f === 'base' || f === 'freeze')) toast('El ciclo en marcha no cambia: la mejora se aplica desde el próximo «' + RR.KINDS[t.kind].btn + '».');
+  commit(st => RR.ops.setStation(st, id, f, v));
+});
+$('#tables').addEventListener('click', e => {
+  const b = e.target.closest('button[data-tact]'); if (!b) return;
+  const id = b.closest('.step').dataset.id, t = S.farm.tables.find(x => x.id === id), a = b.dataset.tact;
+  if (a === 'del') {
+    const after = RR.normState({ ...clone(S), farm: { ...clone(S.farm), tables: S.farm.tables.filter(x => x.id !== id) } });
+    const r = route(), before = RR.statuses(r, S.farm), now = RR.statuses(route(after), after.farm);
+    const lost = r.steps.filter(s => RR.isComplete(before.get(s.id)) && !RR.isComplete(now.get(s.id)));
+    if (!confirm(`¿Borrar ${t.name}?` + (lost.length ? `\n\nEstos pasos de la ruta dejarán de estar completados:\n${lost.map(s => '· ' + s.text).join('\n')}` : '') + '\n\nPuedes deshacerlo después.')) return;
+    return commit(st => RR.ops.deleteStation(st, id), { allowErrors: true, ok: `${t.name} borrada.` });
+  }
+  if (a === 'start') return commit(st => RR.ops.startStation(st, id), { allowErrors: true });
+  if (a === 'stop') return commit(st => RR.ops.stopStation(st, id), { allowErrors: true });
+  if (a === 'log') { const inp = b.closest('.step').querySelector('[data-log]'); if (!(+inp.value > 0)) return toast('Escribe cuánto sacaste en ese ciclo.', 'error');
+    return commit(st => RR.ops.logHarvest(st, id, +inp.value), { allowErrors: true, ok: 'Venta registrada.' }); }
+});
+$$('[data-addst]').forEach(b => b.onclick = () => commit(st => RR.ops.addStation(st, b.dataset.addst), { allowErrors: true }));
+$('#startAll').onclick = () => commit(st => { const now = Date.now(); st.farm.tables.forEach(t => RR.ops.startStation(st, t.id, now)); }, { allowErrors: true });
+$('#notify').onclick = async () => {
+  if (!('Notification' in window)) return toast('Este navegador no admite avisos. Tendrás el sonido y el título de la pestaña.');
+  toast((await Notification.requestPermission()) === 'granted' ? 'Avisos activados.' : 'Avisos bloqueados: tendrás solo el sonido y el título de la pestaña.');
+};
+
+// ---------- temporizadores ----------
+let audio, lastSent = '';
+document.addEventListener('click', () => { try { audio ??= new AudioContext(); } catch {} });
+function alertReady(t) {
+  if (host) return; // la app nativa avisa por su cuenta (bandeja + sonido + barra de tareas)
+  try { for (let i = 0; i < 3; i++) { const o = audio.createOscillator(), g = audio.createGain();
+    o.frequency.value = 880; o.connect(g); g.connect(audio.destination);
+    g.gain.value = 0.15; o.start(audio.currentTime + i * 0.35); o.stop(audio.currentTime + i * 0.35 + 0.2); } } catch {}
+  try { if (Notification.permission === 'granted') new Notification('Rob Run · producción lista', { body: `${t.name}: ${RR.KINDS[t.kind].msg}` }); } catch {}
+}
+const fmtTime = ms => { const s = Math.ceil(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
+  return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
+function tick() {
+  let ready = 0, changed = false;
+  const now = Date.now();
+  for (const t of S.farm.tables) {
+    const el = document.querySelector(`[data-timer="${CSS.escape(t.id)}"]`), card = el?.closest('.step');
+    if (!t.start) { if (el) el.textContent = 'Parado'; card?.classList.remove('ready'); continue; }
+    const left = t.end - now;
+    if (left <= 0) {
+      ready++; if (el) el.textContent = '¡LISTO!'; card?.classList.add('ready');
+      if (!t.notified) { t.notified = true; changed = true; alertReady(t); }
+    } else { if (el) el.textContent = 'Listo en ' + fmtTime(left); card?.classList.remove('ready'); }
+  }
+  if (changed) save();
+  const msg = JSON.stringify(RR.timerList(S.farm));
+  if (host && msg !== lastSent) { lastSent = msg; host.postMessage({ timers: JSON.parse(msg) }); }
+  document.title = ready ? `(${ready}) Producción lista · Rob Run` : 'Rob Run · Ruta de escalado';
+}
+setInterval(tick, 1000);
+
+// ---------- CALCULADORAS ----------
+let sim = RR.normStation({ kind: 'plant', g: 6 });
+function renderCalc() {
+  const F = S.farm, r = route(), sum = RR.routeSummary(r, F), tot = RR.farmTotals(F);
+  const realH = F.tables.reduce((a, t) => a + (RR.calc(t, F).realPerHour ?? 0), 0), withReal = F.tables.filter(t => t.log.length).length;
+  const opts = F.tables.flatMap(t => RR.upgradeOptions(t, F).map(o => ({ ...o, station: t.name }))).sort((a, b) => (a.payback ?? 1e9) - (b.payback ?? 1e9));
+  const cmp = RR.stationComparison(F), simC = RR.calc(sim, F), simInv = RR.investment(sim);
+  $('#calcBody').innerHTML = `
+  <div class="card"><h3>Resumen</h3><div class="row stat">
+    <span>Teórico <b>${money(tot.perHour)}/h</b></span><span>En marcha <b>${money(tot.runningPerHour)}/h</b></span>
+    <span>Real registrado <b>${withReal ? money(realH) + '/h' : '—'}</b> <small>(${withReal} estación(es) con ventas apuntadas)</small></span>
+    <span>Ruta: falta <b>${money(sum.total)}</b> · <b>${hrs(sum.etaHours)}</b> a este ritmo</span></div></div>
+  <div class="card"><h3>Cuellos de botella y recomendaciones</h3>${RR.bottlenecks(r, F).map(m => `<div class="issue l-info"><span class="ico">i</span><span class="msg">${esc(m)}</span></div>`).join('') || '<div class="empty">Nada que destacar.</div>'}</div>
+  <div class="card"><h3>¿Cuánto tardo en juntar…?</h3><div class="row"><label>Cantidad $ <input type="number" min="0" id="goalAmt" value="1000000"></label><span id="goalOut" class="stat"></span></div></div>
+  <div class="card"><h3>Mejoras: cuál compra primero</h3>${opts.length ? `<div class="scroll"><table><tr><th>Mejora</th><th>Estación</th><th>Tier</th><th class="n">+ $/h</th><th class="n">Compra</th><th class="n">Se paga en</th><th>Dato</th></tr>
+    ${opts.map(o => `<tr><td>${esc(o.name)}${o.locked ? ' <span class="badge" title="Tu laptop no llega a ese tier">bloqueada</span>' : ''}</td><td>${esc(o.station)}</td><td>${o.tier}</td><td class="n">${money(o.gain)}</td><td class="n">${money(o.cost)}</td><td class="n">${hrs(o.payback)}</td><td>${confBadge(o.conf)}</td></tr>`).join('')}</table></div>
+    <small>La investigación se paga una vez por wipe y no entra en «se paga en».</small>` : '<div class="empty">Añade estaciones en la Granja para ver qué mejora compensa.</div>'}</div>
+  <div class="card"><h3>Comparador de estaciones (valores por defecto, notoriedad ${F.notoriety})</h3><div class="scroll"><table><tr><th>Estación</th><th class="n">$/h</th><th class="n">Compra</th><th class="n">Se paga en</th></tr>
+    ${cmp.map(c => `<tr><td>${esc(c.label)}</td><td class="n">${c.noData ? 'sin datos' : money(c.perHour)}</td><td class="n">${money(c.investment)}</td><td class="n">${c.noData ? '—' : hrs(c.payback)}</td></tr>`).join('')}</table></div>
+    <small>Mesa con 6 verdes; banco sin mejoras; el laboratorio necesita que apuntes cristales por lote (no hay datos públicos).</small></div>
+  <div class="card"><h3>Simulador (no se guarda)</h3>
+    <div class="row"><label>Estación <select id="simKind">${Object.entries(RR.KINDS).map(([k, K]) => `<option value="${k}" ${sim.kind === k ? 'selected' : ''}>${K.label}</option>`).join('')}</select></label></div>
+    <div class="step" data-sim style="margin-top:8px">
+      <div class="row">${RR.KINDS[sim.kind].upg.map(k => `<label><input type="checkbox" data-t="${k}" ${sim.upg[k] ? 'checked' : ''}> ${esc(itemName(k))}</label>`).join('')}</div>
+      <div class="row" style="margin-top:6px">${stationBody(sim)}</div></div>
+    <div class="row stat"><span>Ciclo <b>${Math.round(simC.cycle)} min</b></span><span>Por hora <b>${simC.noData ? '—' : money(simC.perHour)}</b></span>
+      <span>Compra <b>${money(simInv)}</b></span><span>Se paga en <b>${simC.perHour > 0 ? hrs(simInv / simC.perHour) : '—'}</b></span></div></div>`;
+  const out = () => { const v = +$('#goalAmt').value || 0; $('#goalOut').innerHTML = tot.perHour > 0 ? `<span>Teórico <b>${hrs(v / tot.perHour)}</b></span>${realH > 0 ? `<span>Real <b>${hrs(v / realH)}</b></span>` : ''}` : '<small>Sin producción en la granja.</small>'; };
+  $('#goalAmt').oninput = out; out();
+}
+$('#tab-calc').addEventListener('change', e => {
+  const el = e.target;
+  if (el.id === 'simKind') { sim = RR.normStation({ kind: el.value, g: el.value === 'plant' ? 6 : 0 }); return renderCalc(); }
+  if (!el.closest('[data-sim]') || !el.dataset.t) return;
+  const st = { farm: S.farm, routes: [], cur: '' }; st.farm = { ...S.farm, tables: [sim] };
+  const f = el.dataset.t, v = el.type === 'checkbox' ? el.checked : el.tagName === 'SELECT' && f !== 'box' && f !== 'quality' ? +el.value : el.type === 'number' ? +el.value : el.value;
+  RR.ops.setStation(st, sim.id, f, v); sim = st.farm.tables[0]; renderCalc();
+});
+
+// ---------- DATOS DEL JUEGO ----------
+let datosFilter = '';
+function srcLinks(list) { return (list || []).map(k => { const s = CAT.SOURCES[k]; return s?.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer" title="${esc(s.date)}">${esc(new URL(s.url).hostname.replace('www.', ''))}</a>` : esc(s?.note || k); }).join(', '); }
+function renderDatos() {
+  const q = datosFilter.toLowerCase(), items = Object.values(CAT.items).filter(it => !q || (it.name + it.cat + (it.notes || '')).toLowerCase().includes(q));
+  $('#datosBody').innerHTML = `<div class="card"><div class="row"><span class="grow">Catálogo <b>${esc(CAT.version)}</b> · juego ${esc(CAT.game)} · verificado ${esc(CAT.verified)}</span>
+    <input id="datosQ" placeholder="Filtrar…" value="${esc(datosFilter)}" aria-label="Filtrar catálogo"></div>
+    <small>Kefir no publica precios: son datos de wikis de fans. «confirmado» = 2+ fuentes coinciden; «una fuente»; «discrepancia» = no coinciden (se muestra la alternativa); «comprobado» = visto por ti en el juego.</small></div>
+  <div class="card scroll"><table><tr><th>Elemento</th><th>Tipo</th><th class="n">Investigación</th><th class="n">Compra</th><th>Tier</th><th>Requiere</th><th>Dato</th><th>Fuentes / notas</th></tr>
+    ${items.map(it => `<tr><td>${esc(it.name)}</td><td>${esc(it.cat)}</td><td class="n">${it.research ? money(it.research) : '—'}</td><td class="n">${it.buy ? money(it.buy) : '—'}</td><td>${it.tier || 1}</td>
+      <td>${(it.requires || []).map(itemName).map(esc).join(', ')}${it.tier > 1 ? `${it.requires?.length ? ', ' : ''}parcela nivel ${it.tier}` : ''}</td><td>${confBadge(it.conf)}</td>
+      <td><small>${esc(it.notes || '')}${it.alt ? ' · Alternativa: ' + esc(it.alt) : ''}</small><br>${srcLinks(it.src)}</td></tr>`).join('')}</table></div>
+  <div class="card scroll"><h3>Valores de producción por defecto</h3><table><tr><th>Dato</th><th class="n">Valor</th><th>Confianza</th><th>Fuentes / notas</th></tr>
+    ${Object.entries(CAT.defaults).map(([k, d]) => `<tr><td>${esc(k)}</td><td class="n">${fmt(d.value)}</td><td>${confBadge(d.conf)}</td><td><small>${esc(d.notes || '')}${d.alt ? ' · Alternativa: ' + esc(d.alt) : ''}</small><br>${srcLinks(d.src)}</td></tr>`).join('')}
+    ${Object.entries(CAT.notoriety).map(([k, d]) => `<tr><td>Notoriedad · ${esc(k)}</td><td class="n">${d.values.map(v => '+' + Math.round(v * 100) + '%').join(' / ')}</td><td>${confBadge(d.conf)}</td><td><small>${esc(d.notes || '')}</small><br>${srcLinks(d.src)}</td></tr>`).join('')}
+    ${Object.entries(CAT.limits).map(([k, d]) => `<tr><td>Límite · ${esc(k)}</td><td class="n">${fmt(d.value)}</td><td>${confBadge(d.conf)}</td><td><small>${esc(d.notes || '')}</small><br>${srcLinks(d.src)}</td></tr>`).join('')}
+  </table></div>`;
+  const inp = $('#datosQ'); inp.oninput = () => { datosFilter = inp.value; renderDatos(); const i = $('#datosQ'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); };
+}
+
+// ---------- COPIAS ----------
+function renderCopias() {
+  const list = backups();
+  $('#copiasBody').innerHTML = `<div class="card"><h3>Copia completa</h3>
+    <p><small>Guarda todas tus rutas, la granja y los temporizadores en un archivo. Para pasar tus datos a otro equipo o navegador, o antes de tocar algo importante.</small></p>
+    <div class="row"><button id="exportAll">Descargar copia completa</button><button id="restoreFile">Restaurar desde archivo…</button><input id="restoreIn" type="file" accept=".json,application/json" hidden></div></div>
+  <div class="card"><h3>Copias automáticas en este equipo</h3>
+    ${list.length ? `<table><tr><th>Fecha</th><th>Motivo</th><th></th></tr>${list.map((b, i) => `<tr><td>${new Date(b.at).toLocaleString('es')}</td><td>${esc(b.reason)}</td>
+      <td><button data-bk="${i}" data-op="restore">Restaurar</button> <button data-bk="${i}" data-op="dl">Descargar</button></td></tr>`).join('')}</table>`
+    : '<div class="empty">Aún no hay copias. Se crean solas una vez al día, antes de actualizar el formato y antes de restaurar.</div>'}</div>
+  <div class="card"><h3>Actualizaciones</h3><p><small>Versión v${esc(RR.APP_VERSION)}. La app mira sola cada 6 h si hay una versión nueva en GitHub. Actualizar no borra tus rutas ni tu granja.</small></p><button id="checkUpd">Buscar actualizaciones</button></div>
+  <div class="card"><h3>Empezar de cero</h3><p><small>Borra rutas, granja y temporizadores de este equipo (se guarda una copia antes).</small></p><button id="resetAll">Borrar todos mis datos…</button></div>`;
+}
+$('#tab-copias').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.id === 'exportAll') return download(`robrun-copia-${new Date().toISOString().slice(0, 10)}.json`, { format: 'robrun-copia', app: RR.APP_VERSION, ...S });
+  if (b.id === 'restoreFile') return $('#restoreIn').click();
+  if (b.id === 'checkUpd') return checkUpdate(true);
+  if (b.id === 'resetAll') { if (confirm('¿Borrar todas tus rutas, la granja y los temporizadores? Se guarda una copia antes en esta misma pestaña.')) {
+    pushBackup('Antes de empezar de cero', JSON.stringify(S)); undoStack.push(S); S = RR.normState(null); save(); render(); toast('Datos borrados. Hay una copia en «Copias».', 'ok', [{ label: 'Deshacer', fn: undo }]); } return; }
+  const bk = backups()[+b.dataset.bk]; if (!bk) return;
+  if (b.dataset.op === 'dl') { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([bk.data], { type: 'application/json' })); a.download = `robrun-copia-${bk.at}.json`; a.click(); return; }
+  let parsed; try { parsed = JSON.parse(bk.data); } catch { return toast('Esta copia está dañada y no se puede restaurar. Descárgala para revisarla.', 'error'); }
+  if (confirm(`¿Restaurar la copia del ${new Date(bk.at).toLocaleString('es')}? Lo actual se guarda antes como otra copia.`)) restoreFull(parsed);
+});
+$('#tab-copias').addEventListener('change', async e => {
+  if (e.target.id !== 'restoreIn') return; const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  let data; try { data = JSON.parse(await f.text()); } catch { return toast('El archivo no es un JSON válido.', 'error'); }
+  if (!data || !Array.isArray(data.routes)) return toast('Ese archivo no es una copia completa. Para añadir rutas usa «Importar» en la pestaña Ruta.', 'error');
+  if (confirm('¿Restaurar esta copia? Sustituye tus datos actuales (se guarda una copia antes).')) restoreFull(data);
+});
+
+// ---------- arranque ----------
+function render() {
+  $('#undo').disabled = !undoStack.length; $('#redo').disabled = !redoStack.length;
+  $('#catItems').innerHTML ||= Object.values(CAT.items).map(it => `<option value="${esc(it.name)}">${esc(it.cat)}</option>`).join('');
+  const tab = S.tab;
+  if (tab === 'ruta') renderRoute(); else if (tab === 'granja') renderFarm(); else if (tab === 'calc') renderCalc(); else if (tab === 'datos') renderDatos(); else renderCopias();
+  if (tab !== 'granja') tick();
+}
+// ---------- actualizaciones: solo lee la última release del repo de GitHub; nunca toca tus datos ----------
+const UPD_KEY = 'robrun-update-check';
+async function checkUpdate(manual) {
+  if (!manual && Date.now() - (+storage.get(UPD_KEY) || 0) < 6 * 3600e3) return; // como mucho cada 6 h
+  storage.set(UPD_KEY, String(Date.now()));
+  let rel;
+  try { const r = await fetch(`https://api.github.com/repos/${RR.REPO}/releases/latest`, { headers: { Accept: 'application/vnd.github+json' } }); if (!r.ok) throw 0; rel = await r.json(); }
+  catch { if (manual) toast('No se pudo consultar GitHub. ¿Hay conexión?', 'error'); return; }
+  const tag = String(rel?.tag_name || '');
+  if (!RR.isNewer(tag)) { if (manual) toast(`Tienes la última versión (v${RR.APP_VERSION}).`, 'ok'); return; }
+  const acts = host
+    ? [{ label: 'Actualizar ahora', fn: () => { host.postMessage({ update: true }); toast('Descargando la actualización… La app se cerrará y se abrirá sola.', 'info'); } }]
+    : [{ label: 'Ver descarga', fn: () => window.open(`https://github.com/${RR.REPO}/releases/latest`, '_blank', 'noopener') }];
+  notice(`Hay una versión nueva: ${tag} (tienes v${RR.APP_VERSION}). Tus rutas y tu granja no se tocan al actualizar.`, 'info', acts);
+}
+host?.addEventListener('message', e => { if (e.data?.updateError) toast(`No se pudo actualizar: ${e.data.updateError}`, 'error'); });
+setTimeout(() => checkUpdate(false), 3000);
+$('#ver').textContent = `v${RR.APP_VERSION} · datos ${CAT.version}`;
+renderNotices();
+showTab(S.tab);
+window.RRApp = { get S() { return S; }, commit, undo, redo, render, showTab, backups, pushBackup, restoreFull, load }; // para pruebas
+</script>
+</body>
+</html>

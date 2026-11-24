@@ -1,0 +1,433 @@
+{
+  "id": "dos-granjas",
+  "version": 2,
+  "aliases": [
+    "Full farmeo: 2 granjas completas"
+  ],
+  "name": "Full farmeo: 2 granjas completas",
+  "goal": "2 Grow Rooms en la misma base · 12 mesas · Fan + Water Pump + UV Lamp en todas · 72 plantas doradas",
+  "steps": [
+    {
+      "phase": "Early",
+      "type": "Dinero",
+      "text": "Capital inicial: 150k",
+      "target": 150000,
+      "notes": "Empieza en un servidor recién abierto: el wipe llega a los 7 días. Desde aquí, todo el dinero va al título de parcela.",
+      "subs": [
+        "Ponte la máscara (modo Criminal) y roba tiendas pequeñas: gasolinera, farmacia, joyería",
+        "Vende el botín al Fence (furgonetas marcadas en el mapa) y coge el dinero del mostrador al momento",
+        "Abre cuenta en el banco como Civil y deposita cada vez que pases de ~50k",
+        "Alternativa con menos riesgo: hacer turnos de policía (equipo gratis)"
+      ]
+    },
+    {
+      "phase": "Early",
+      "type": "Comprar",
+      "text": "Land Plot Title Nv1 ($150k)",
+      "target": 150000,
+      "notes": "Si el título no aparece en el inventario, contacta con soporte y dales tu UID (menú Esc, bajo tu nombre).",
+      "subs": [
+        "Laptop > árbol de Lenny > Documentos: investigar el título Nv1 ($50k)",
+        "Comprar el título Nv1 ($100k)",
+        "Comprobar que el título está en el inventario"
+      ],
+      "id": "titulo-1",
+      "item": "land_title_1"
+    },
+    {
+      "phase": "Early",
+      "type": "Otro",
+      "text": "Alquilar parcela en distrito nivel 1",
+      "target": 0,
+      "notes": "Solo se puede alquilar en asentamientos que ya tienen dueño.",
+      "subs": [
+        "Buscar un asentamiento nivel 1 con dueño y parcelas libres, mejor si está cerca de tiendas, hoteles y algún Fence",
+        "Firmar el contrato en el cartel de la parcela",
+        "Colocar la base (tráiler)"
+      ],
+      "id": "parcela-1",
+      "requires": [
+        "titulo-1"
+      ]
+    },
+    {
+      "phase": "Early",
+      "type": "Dinero",
+      "text": "Ahorrar 320k para la Granja A",
+      "target": 320000,
+      "notes": "Grow Room: $150k investigación + $100k compra. Grow Table: $30k + $40k.",
+      "subs": [
+        "Seguir con robos o policía y depositar en el banco",
+        "Al robar tiendas, fíjate detrás y dentro por si hay plantas: apunta dónde aparecen"
+      ]
+    },
+    {
+      "id": "growroom-a",
+      "phase": "Early",
+      "type": "Taller / mejora",
+      "text": "Montar Grow Room A",
+      "item": "grow_room",
+      "target": 250000,
+      "notes": "Va en la parcela. Investigación en Shipments (H); compra en Mercado negro > Construcción.",
+      "subs": [
+        "Investigar el Grow Room en Shipments, tecla H ($150k)",
+        "Comprar el Grow Room en Mercado negro > Construcción ($100k)",
+        "Colocar el Grow Room desde la bolsa"
+      ]
+    },
+    {
+      "id": "mesa-a1",
+      "phase": "Early",
+      "type": "Taller / mejora",
+      "text": "Mesa A-1",
+      "item": "grow_table",
+      "target": 70000,
+      "requires": [
+        "growroom-a"
+      ],
+      "subs": [
+        "Investigar ($30k) y comprar ($40k) la Grow Table",
+        "Colocar la mesa desde el tablero Structure Plan de la pared",
+        "Crear la mesa «A-1» en la pestaña Granja"
+      ]
+    },
+    {
+      "phase": "Early",
+      "type": "Plantas",
+      "q": "p",
+      "down": true,
+      "text": "Farmear plantas: llenar A-1 (6)",
+      "target": 6,
+      "notes": "Las moradas son mejores, pero las verdes valen de momento.",
+      "subs": [
+        "Ir en coche: cada planta ocupa 1 hueco de carga en el maletero",
+        "Ruta de tiendas: gasolinera, armería de Downtown, joyerías, farmacias (también la trastienda)",
+        "Si no hay suerte: hoteles Blueberry Hall y East Ocean, y casas o garajes",
+        "Máscara puesta para cogerla; no saques el arma, porque se te cae",
+        "Colocar las plantas en A-1 y pulsar «Plantado / cosechado ahora» en la pestaña Granja",
+        "Apuntar en la pestaña Granja cuántas hay de cada color"
+      ],
+      "requires": [
+        "mesa-a1"
+      ]
+    },
+    {
+      "phase": "Early",
+      "type": "Otro",
+      "text": "Rutina de cosecha (repetir siempre)",
+      "target": 0,
+      "notes": "Marca esta tarea cuando la tengas automatizada. Cada planta da 2-4 bolsas: verde $4k, morada $6k, dorada $8k.",
+      "subs": [
+        "Cuando suene el aviso: cosechar la mesa (la planta vuelve a crecer sola)",
+        "Pulsar «Plantado / cosechado ahora» en esa mesa",
+        "Vender las bolsas al Fence o en el Sales Center del distrito",
+        "Coger el dinero del mostrador al momento y depositarlo o lavarlo"
+      ]
+    },
+    {
+      "phase": "Early",
+      "type": "Taller / mejora",
+      "text": "Fan en A-1 ($125k)",
+      "target": 125000,
+      "notes": "Según las guías, es la única mejora que compensa al principio.",
+      "subs": [
+        "Investigar el Fan ($100k)",
+        "Comprar el Fan ($25k)",
+        "Instalarlo en la mesa A-1 > Modificación",
+        "Marcar Fan en A-1 en la pestaña Granja"
+      ],
+      "item": "fan",
+      "requires": [
+        "mesa-a1"
+      ]
+    },
+    {
+      "phase": "Early",
+      "type": "Taller / mejora",
+      "text": "Mesas A-2 a A-6 ($200k)",
+      "target": 200000,
+      "notes": "$40k por mesa (la investigación ya está pagada). Compra una cada vez que tengas el dinero: así producen antes.",
+      "subs": [
+        "Mesa A-2",
+        "Mesa A-3",
+        "Mesa A-4",
+        "Mesa A-5",
+        "Mesa A-6",
+        "Crear A-2 a A-6 en la pestaña Granja"
+      ],
+      "id": "mesas-a",
+      "item": "grow_table"
+    },
+    {
+      "phase": "Early",
+      "type": "Plantas",
+      "q": "p",
+      "down": true,
+      "text": "Farmear plantas: llenar Granja A (36)",
+      "target": 36,
+      "notes": "Llena cada mesa en cuanto la coloques. Valen verdes.",
+      "subs": [
+        "A-2 (6 plantas)",
+        "A-3 (6 plantas)",
+        "A-4 (6 plantas)",
+        "A-5 (6 plantas)",
+        "A-6 (6 plantas)"
+      ]
+    },
+    {
+      "phase": "Early",
+      "type": "Taller / mejora",
+      "text": "Fan en A-2 a A-6 ($125k)",
+      "target": 125000,
+      "notes": "$25k por mesa. Después marca Fan en cada mesa de la pestaña Granja.",
+      "subs": [
+        "Fan A-2",
+        "Fan A-3",
+        "Fan A-4",
+        "Fan A-5",
+        "Fan A-6"
+      ],
+      "item": "fan",
+      "requires": [
+        "mesas-a"
+      ]
+    },
+    {
+      "phase": "Early",
+      "type": "Otro",
+      "text": "Proteger la base",
+      "target": 0,
+      "notes": "Una granja llena atrae asaltos. Los fusibles obligan a usar más decodificadores para hackear.",
+      "subs": [
+        "Poner fusibles electrónicos en el Grow Room y en la casa",
+        "Instalar una alarma (la que avisa al dueño y al clan, si tienes clan)",
+        "Poner un botiquín en la base para curarte y reaparecer allí"
+      ],
+      "item": "fuse_u"
+    },
+    {
+      "phase": "Mid",
+      "type": "Comprar",
+      "text": "Land Plot Title Nv2 ($1M)",
+      "target": 1000000,
+      "notes": "Requiere laptop tier I y el título Nv1 investigado. Lleva aquí el dinero total ahorrado.",
+      "subs": [
+        "Investigar el título Nv2 ($200k)",
+        "Ahorrar $800k (cosechas de la Granja A)",
+        "Comprar el título Nv2"
+      ],
+      "id": "titulo-2",
+      "item": "land_title_2"
+    },
+    {
+      "phase": "Mid",
+      "type": "Otro",
+      "text": "Mudarse a distrito nivel 2",
+      "target": 0,
+      "notes": "La base se muda entera. No se puede con el bloqueo por asalto activo.",
+      "subs": [
+        "Cosechar y vender todo antes de mudarte",
+        "Buscar un asentamiento nivel 2 con dueño y parcela libre",
+        "Firmar el contrato y comprobar que llegan las mesas y las plantas",
+        "Comprobar que el laptop ya es tier II",
+        "Volver a pulsar «Plantado ahora» en las mesas si el ciclo se reinició"
+      ],
+      "id": "distrito-2",
+      "requires": [
+        "titulo-2"
+      ]
+    },
+    {
+      "phase": "Mid",
+      "type": "Taller / mejora",
+      "text": "Water Pump en la Granja A ($620k)",
+      "target": 620000,
+      "notes": "Tier II. Investigación $200k + $70k por mesa.",
+      "subs": [
+        "Investigar la Water Pump ($200k)",
+        "Pump A-1",
+        "Pump A-2",
+        "Pump A-3",
+        "Pump A-4",
+        "Pump A-5",
+        "Pump A-6",
+        "Marcar Pump en las mesas A de la pestaña Granja"
+      ],
+      "item": "water_pump",
+      "requires": [
+        "distrito-2"
+      ]
+    },
+    {
+      "phase": "Mid",
+      "type": "Taller / mejora",
+      "text": "Montar Granja B: Grow Room + 6 mesas ($340k)",
+      "target": 340000,
+      "notes": "Va en la misma base que la Granja A (comprobado en el juego). Grow Room $100k + $40k por mesa.",
+      "subs": [
+        "Comprar y colocar el 2º Grow Room ($100k)",
+        "Mesa B-1",
+        "Mesa B-2",
+        "Mesa B-3",
+        "Mesa B-4",
+        "Mesa B-5",
+        "Mesa B-6",
+        "Crear B-1 a B-6 en la pestaña Granja"
+      ],
+      "id": "granja-b",
+      "item": "grow_room"
+    },
+    {
+      "phase": "Mid",
+      "type": "Plantas",
+      "q": "p",
+      "down": true,
+      "text": "Farmear plantas: llenar Granja B (72 en total)",
+      "target": 72,
+      "notes": "Valen verdes. A partir de aquí, las moradas que encuentres ponlas en las mesas con más mejoras.",
+      "subs": [
+        "B-1 (6 plantas)",
+        "B-2 (6 plantas)",
+        "B-3 (6 plantas)",
+        "B-4 (6 plantas)",
+        "B-5 (6 plantas)",
+        "B-6 (6 plantas)"
+      ]
+    },
+    {
+      "phase": "Mid",
+      "type": "Taller / mejora",
+      "text": "Fan + Water Pump en la Granja B ($570k)",
+      "target": 570000,
+      "notes": "$95k por mesa ($25k Fan + $70k Pump).",
+      "subs": [
+        "B-1",
+        "B-2",
+        "B-3",
+        "B-4",
+        "B-5",
+        "B-6",
+        "Marcar las mejoras en la pestaña Granja"
+      ],
+      "item": "water_pump",
+      "requires": [
+        "granja-b"
+      ]
+    },
+    {
+      "phase": "Mid",
+      "type": "Plantas",
+      "q": "p",
+      "down": false,
+      "text": "Reemplazar verdes: 36 moradas o mejores",
+      "target": 36,
+      "notes": "Solo se completa con moradas o doradas de verdad.",
+      "subs": [
+        "Cada vez que farmees plantas, coge solo moradas o doradas",
+        "Cambiarlas por verdes, empezando por las mesas con más mejoras",
+        "Vender las verdes retiradas al contrabandista (~$20k cada una)",
+        "Actualizar los colores de cada mesa en la pestaña Granja"
+      ]
+    },
+    {
+      "phase": "Late",
+      "type": "Comprar",
+      "text": "Land Plot Title Nv3 ($3M)",
+      "target": 3000000,
+      "notes": "Requiere laptop tier II.",
+      "subs": [
+        "Investigar el título Nv3 ($1M)",
+        "Ahorrar $2M",
+        "Comprar el título Nv3"
+      ],
+      "id": "titulo-3",
+      "item": "land_title_3"
+    },
+    {
+      "phase": "Late",
+      "type": "Otro",
+      "text": "Mudarse a distrito nivel 3",
+      "target": 0,
+      "notes": "Hay más asaltos: refuerza la defensa antes de llenar la base de doradas.",
+      "subs": [
+        "Cosechar y vender todo antes de mudarte",
+        "Buscar un asentamiento nivel 3 con dueño y parcela libre",
+        "Firmar el contrato y comprobar que el laptop es tier III",
+        "Poner fusibles en todas las estructuras (más que antes)",
+        "Reiniciar los temporizadores de la pestaña Granja"
+      ],
+      "id": "distrito-3",
+      "requires": [
+        "titulo-3"
+      ]
+    },
+    {
+      "phase": "Late",
+      "type": "Taller / mejora",
+      "text": "UV Lamp en las 12 mesas ($3,5M)",
+      "target": 3500000,
+      "notes": "Tier III. Investigación $500k + $250k por mesa. Empieza por las mesas que tengan doradas.",
+      "subs": [
+        "Investigar la UV Lamp ($500k)",
+        "UV A-1",
+        "UV A-2",
+        "UV A-3",
+        "UV A-4",
+        "UV A-5",
+        "UV A-6",
+        "UV B-1",
+        "UV B-2",
+        "UV B-3",
+        "UV B-4",
+        "UV B-5",
+        "UV B-6",
+        "Marcar UV en todas las mesas de la pestaña Granja"
+      ],
+      "item": "uv_lamp",
+      "requires": [
+        "distrito-3"
+      ]
+    },
+    {
+      "phase": "Late",
+      "type": "Plantas",
+      "q": "p",
+      "down": false,
+      "text": "Reemplazar verdes: 72 moradas o mejores",
+      "target": 72,
+      "notes": "Ya no debe quedar ninguna verde.",
+      "subs": [
+        "Granja A sin verdes",
+        "Granja B sin verdes",
+        "Vender las verdes retiradas al contrabandista"
+      ]
+    },
+    {
+      "phase": "Late",
+      "type": "Plantas",
+      "q": "o",
+      "down": false,
+      "text": "Reemplazar moradas: 36 doradas",
+      "target": 36,
+      "notes": "Una dorada da el doble que una verde en cada cosecha y vuelve a crecer dorada.",
+      "subs": [
+        "Farmear solo doradas",
+        "Llenar primero la Granja A de doradas",
+        "Vender las moradas retiradas al contrabandista (~$30k cada una)"
+      ]
+    },
+    {
+      "phase": "Late",
+      "type": "Plantas",
+      "q": "o",
+      "down": false,
+      "text": "META: 72 doradas",
+      "target": 72,
+      "notes": "72 × 3 bolsas × $8k = ~$1,7M por cosecha (~40 min con las 3 mejoras).",
+      "subs": [
+        "Granja B llena de doradas",
+        "Mantener la rutina de cosecha y la defensa hasta el wipe"
+      ]
+    }
+  ]
+}
