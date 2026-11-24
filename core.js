@@ -3,8 +3,8 @@
 // la interfaz (ruta-escalado.html) solo pinta y llama a estas funciones.
 (function (G) {
   'use strict';
-  const SCHEMA = 2;
-  const APP_VERSION = '2.1.0';
+  const SCHEMA = 3;
+  const APP_VERSION = '2.2.0';
   const REPO = 'daviddaco1/rob-run-planner'; // actualizaciones: releases de este repo de GitHub
   // ¿La etiqueta de release (p. ej. "v2.1.3") es más nueva que la versión instalada?
   function isNewer(tag, cur = APP_VERSION) {
@@ -144,9 +144,24 @@
     for (const r of arr(s.routes).slice(0, LIM.routes)) { const n = normRoute(r); if (!n) continue; if (seen.has(n.id)) n.id = uid(); seen.add(n.id); routes.push(n); }
     if (!routes.length) routes.push(exampleRoute());
     const st = { schema: SCHEMA, routes, cur: routes.some(r => r.id === s.cur) ? s.cur : routes[0].id,
-      included: {}, farm: normFarm(s.farm), tab: ['ruta', 'granja', 'calc'].includes(s.tab) ? s.tab : 'ruta' };
+      included: {}, farm: null, farms: {}, farmOf: '', tab: ['ruta', 'granja', 'calc'].includes(s.tab) ? s.tab : 'ruta' };
     if (isObj(s.included)) for (const [k, v] of Object.entries(s.included)) st.included[str(k, 60)] = int(v, 0);
+    // Cada ruta (perfil) tiene su granja. st.farm es la de la ruta activa; las demás van en st.farms[idRuta].
+    const has = id => routes.some(r => r.id === id);
+    if (isObj(s.farms)) for (const [k, v] of Object.entries(s.farms)) if (has(k)) st.farms[k] = normFarm(v);
+    const farmOf = typeof s.farmOf === 'string' ? s.farmOf : st.cur; // antes del esquema 3 había una sola granja: pasa a la ruta activa
+    if (has(farmOf)) st.farms[farmOf] = normFarm(s.farm);              // si su ruta se borró, su granja se fue con ella
+    swapFarm(st, st.farms[st.cur] || normFarm(null));
     return st;
+  }
+  function swapFarm(S, farm) { S.farm = farm; delete S.farms[S.cur]; S.farmOf = S.cur; }
+  // Tras cambiar S.cur: guarda la granja activa con su ruta y saca la de la nueva ruta activa.
+  function syncFarm(S) {
+    if (!isObj(S.farms)) S.farms = {};
+    for (const k of Object.keys(S.farms)) if (!S.routes.some(r => r.id === k)) delete S.farms[k];
+    if (S.farmOf === S.cur) return;
+    if (S.routes.some(r => r.id === S.farmOf)) S.farms[S.farmOf] = S.farm;
+    swapFarm(S, S.farms[S.cur] || normFarm(null));
   }
   function exampleRoute() {
     return normRoute({ name: 'Ruta ejemplo', goal: 'Título tier 3 con talleres mejorados', steps: [
@@ -177,6 +192,10 @@
       // quien ya tenía una ruta incluida (por nombre) tenía su versión 1: así ve el aviso de versión nueva
       for (const name of arr(src.added)) { const b = bundled.find(x => x.name === name || arr(x.aliases).includes(name)); if (b?.id) src.included[b.id] = 1; }
       notes.push('Datos actualizados al formato 2 (copia de seguridad guardada antes).');
+    }
+    if (from < 3) {
+      const cur = arr(raw.routes).find(r => isObj(r) && r.id === raw.cur) || arr(raw.routes)[0];
+      if (arr(raw.farm?.tables).length) notes.push(`Ahora cada ruta tiene su propia granja. La que tenías queda en la ruta «${str(cur?.name, LIM.name) || 'activa'}»; las demás rutas empiezan con la granja vacía.`);
     }
     return { state: normState(src), from, notes };
   }
@@ -452,22 +471,25 @@
     setSub(S, id, sid, field, value) { const s = route(S).steps.find(x => x.id === id), x = s?.subs.find(y => y.id === sid); if (!x) return;
       if (field === 'done') x.done = !!value; else if (field === 'text') x.text = str(value); },
     delSub(S, id, sid) { const s = route(S).steps.find(x => x.id === id); if (s) s.subs = s.subs.filter(x => x.id !== sid); },
-    newRoute(S, name) { const r = normRoute({ name, steps: [] }); S.routes.push(r); S.cur = r.id; return r; },
+    newRoute(S, name) { const r = normRoute({ name, steps: [] }); S.routes.push(r); S.cur = r.id; syncFarm(S); return r; },
     newWipe(S) { const src = route(S);
       const r = normRoute({ ...clone(src), id: uid(), origin: undefined, name: `${src.name} · wipe ${new Date().toLocaleDateString('es')}`.slice(0, LIM.name),
         steps: src.steps.map(s => ({ ...s, progress: 0, done: false, subs: s.subs.map(x => ({ ...x, done: false })) })) });
       // mantener las referencias entre pasos: normRoute conserva los ids de paso de la copia
-      S.routes.push(r); S.cur = r.id; return r; },
+      S.routes.push(r); S.cur = r.id; syncFarm(S); return r; }, // wipe nuevo: granja vacía
     duplicateRoute(S, id, suffix = ' (copia)') { const src = route(S, id); const r = normRoute({ ...clone(src), id: uid(), origin: undefined, name: (src.name + suffix).slice(0, LIM.name) });
-      S.routes.push(r); S.cur = r.id; return r; },
+      const farm = src.id === S.cur ? S.farm : S.farms[src.id];
+      S.routes.push(r); S.cur = r.id; syncFarm(S);
+      if (farm) S.farm = normFarm({ ...clone(farm), tables: farm.tables.map(t => ({ ...t, id: undefined, start: 0, end: 0 })) }); // copia la granja, con los temporizadores parados
+      return r; },
     deleteRoute(S, id) { if (S.routes.length < 2) throw new UserError('Debe quedar al menos una ruta. Crea otra antes de borrar esta.');
-      S.routes = S.routes.filter(r => r.id !== id); if (!S.routes.some(r => r.id === S.cur)) S.cur = S.routes[0].id; },
+      S.routes = S.routes.filter(r => r.id !== id); if (!S.routes.some(r => r.id === S.cur)) S.cur = S.routes[0].id; syncFarm(S); },
     setRoute(S, field, value) { const r = route(S);
       if (field === 'name') r.name = str(value, LIM.name).trim() || 'Sin nombre';
       else if (field === 'goal') r.goal = str(value);
       else if (field === 'have') r.have = [...new Set(arr(value).map(v => str(v, 60)))];
       else if (field === 'draft') r.draft = !!value; },
-    setCur(S, id) { if (S.routes.some(r => r.id === id)) S.cur = id; },
+    setCur(S, id) { if (S.routes.some(r => r.id === id)) { S.cur = id; syncFarm(S); } },
     // Estaciones
     addStation(S, kind) { const f = S.farm; if (f.tables.length >= LIM.stations) throw new UserError(`Máximo ${LIM.stations} estaciones.`);
       const t = normStation({ kind, name: `${KINDS[kind].short} ${f.tables.filter(x => x.kind === kind).length + 1}` }); f.tables.push(t); return t; },
@@ -552,7 +574,7 @@
       if (have === undefined) {
         const [r] = parseImport(JSON.stringify(b), S.farm).routes; if (!r) continue;
         r.origin = { id: b.id, version: v }; S.routes.push(r); S.included[b.id] = v;
-        if (fresh && !notes.length) S.cur = r.id;
+        if (fresh && !notes.length) { S.cur = r.id; syncFarm(S); }
         notes.push({ kind: 'added', id: b.id, name: r.name });
       } else if (v > have) notes.push({ kind: 'update', id: b.id, name: str(b.name, LIM.name), version: v });
     }
@@ -566,8 +588,10 @@
   }
 
   // ---------- temporizadores ----------
-  function timerList(farm) {
-    return farm.tables.filter(t => t.start).map(t => ({ id: t.id, due: Math.round(t.end), text: `${t.name}: ${KINDS[t.kind].msg}` }));
+  // Acepta una granja o el estado completo (todas las granjas: la producción sigue aunque cambies de ruta).
+  function timerList(x) {
+    const farms = Array.isArray(x?.tables) ? [[x, '']] : [[x.farm, ''], ...Object.entries(x.farms || {}).map(([id, f]) => [f, x.routes.find(r => r.id === id)?.name || ''])];
+    return farms.flatMap(([farm, rn]) => farm.tables.filter(t => t.start).map(t => ({ id: t.id, due: Math.round(t.end), text: `${t.name}: ${KINDS[t.kind].msg}${rn ? ` (${rn})` : ''}` })));
   }
 
   // ---------- invariantes (usadas por los tests y al cargar) ----------
@@ -587,7 +611,9 @@
         if (s.type === 'Plantas' && s.done) bad.push('plantas con done manual');
       }
     }
-    for (const t of S.farm.tables) {
+    if (S.farmOf !== S.cur) bad.push('granja de otra ruta');
+    for (const k of Object.keys(S.farms || {})) if (k === S.cur || !S.routes.some(r => r.id === k)) bad.push('granja huérfana');
+    for (const t of [S.farm, ...Object.values(S.farms || {})].flatMap(f => f.tables)) {
       if (!KINDS[t.kind]) bad.push('kind');
       if (t.kind === 'plant' && t.g + t.p + t.o > maxBush()) bad.push('más de 6 plantas');
       if (t.start && !(t.end > t.start)) bad.push('temporizador');

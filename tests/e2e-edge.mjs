@@ -156,7 +156,7 @@ try {
     await ev(`localStorage.setItem('robrun-rutas-v1', ${JSON.stringify(JSON.stringify(v1))}); true`);
     await go();
     const s = await S();
-    assert.equal(s.schema, 2);
+    assert.equal(s.schema, 3);
     assert.equal(s.included['dos-granjas'], 1);
     assert.ok(await ev(`RRApp.backups().some(b => b.reason.startsWith('Antes de actualizar'))`));
     assert.ok(await ev(`document.querySelector('#notices').textContent.includes('versión nueva')`));
@@ -175,6 +175,19 @@ try {
     assert.equal((await S()).routes.length, 1);
     await ev('RRApp.undo(); true');
     assert.equal((await S()).routes.length, n);
+  });
+
+  await step('granja por ruta: el selector de la pestaña Granja cambia de granja y de ruta', async () => {
+    await ev(`RRApp.showTab('granja'); RRApp.commit(st => RR.ops.addStation(st, 'repack'), { allowErrors: true }); true`);
+    const s = await S(), n = s.farm.tables.length, other = s.routes.find(r => r.id !== s.cur).id;
+    await ev(`const el = document.getElementById('farmRoute'); el.value = ${JSON.stringify(other)}; el.dispatchEvent(new Event('change', { bubbles: true })); true`);
+    const s2 = await S();
+    assert.equal(s2.cur, other);
+    assert.equal(s2.farms[s.cur].tables.length, n);
+    assert.equal(await ev(`document.getElementById('farmRoute').value`), other); // la pestaña se repintó con la otra granja
+    assert.equal(await ev(`document.querySelectorAll('#tables [data-timer]').length`), s2.farm.tables.length);
+    await ev('RRApp.undo(); true');
+    assert.equal((await S()).cur, s.cur);
   });
 
   await step('sin errores de JavaScript en toda la sesión', async () => { assert.deepEqual(c.errors, []); });

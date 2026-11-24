@@ -22,7 +22,8 @@ The app has no build step, no runtime dependencies and no backend. It runs from 
    - Every value carries `conf` (`confirmado`/`una-fuente`/`discrepancia`/`jugador`/`estimado`/`pendiente`), `src` and optionally `alt`. The research behind it and the update procedure are in `DATOS.md`.
 2. **`core.js`** → `globalThis.RR` (also `module.exports` for node). It holds all logic and is pure (no DOM):
    - **Schema and normalization:** `normState`/`normRoute`/`normStep`/`normStation`/`normFarm`. These never throw and clamp, sanitize, dedupe ids and drop broken refs.
-   - **Migration:** `migrate(raw, bundled)` upgrades v1 (no `schema`) to `SCHEMA = 2`.
+   - **Migration:** `migrate(raw, bundled)` upgrades v1 (no `schema`) and v2 to `SCHEMA = 3`.
+   - **Farm per route (profile):** `S.farm` is always the active route's farm, so all farm code just uses `S.farm`. Other routes' farms live in `S.farms[routeId]`, and `S.farmOf === S.cur`. `syncFarm(S)` swaps them and must run after anything that changes `S.cur` (the route ops and `syncIncluded` already do; `normState` does it too). Deleting a route drops its farm; duplicating copies it with timers stopped; a new wipe starts empty. `timerList(S)` covers every farm.
    - **Step status:** `statuses()`/`baseStatus()`. For non-plant steps, `done` is only the *manual* flag; completion by target or subtasks is computed. The rules are documented in the comment above `plantCount`.
    - **Validation:** `validateRoute(route, farm)` and `validateFarm(farm)` return `{level: error|warn|info, code, msg, stepId|stationId, fix}`.
      - Errors are demonstrably impossible states: dependency cycle; a dependency or *confirmed* catalog requirement placed later in the route; a *confirmed* game limit exceeded.

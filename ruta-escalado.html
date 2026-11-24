@@ -115,6 +115,10 @@ td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 
   <section id="tab-granja" role="tabpanel" hidden>
     <div class="card">
+      <div class="row" style="margin-bottom:8px">
+        <label for="farmRoute">Granja de la ruta</label><select id="farmRoute" class="grow" style="min-width:200px"></select>
+        <small>Cada ruta tiene su propia granja. Los avisos de todas siguen sonando.</small>
+      </div>
       <div class="row">
         <label>Ciclo base de planta (min) <input type="number" min="1" step="any" data-g="base"></label>
         <label>Bolsas por planta <input type="number" min="0" step="0.5" data-g="bags"></label>
@@ -442,7 +446,7 @@ $('#dupRoute').onclick = () => commit(st => RR.ops.duplicateRoute(st, st.cur), {
 $('#newWipe').onclick = () => commit(st => RR.ops.newWipe(st), { allowErrors: true, ok: 'Ruta copiada para el nuevo wipe, con el progreso a cero.' });
 $('#delRoute').onclick = () => {
   if (S.routes.length < 2) return toast('Debe quedar al menos una ruta. Crea o importa otra antes de borrar esta.', 'error');
-  if (confirm(`¿Borrar «${route().name}»? Podrás deshacerlo mientras no cierres la app.`)) commit(st => RR.ops.deleteRoute(st, st.cur), { allowErrors: true, ok: 'Ruta borrada.' });
+  if (confirm(`¿Borrar «${route().name}» y su granja${S.farm.tables.length ? ` (${S.farm.tables.length} estaciones)` : ''}? Podrás deshacerlo mientras no cierres la app.`)) commit(st => RR.ops.deleteRoute(st, st.cur), { allowErrors: true, ok: 'Ruta borrada.' });
 };
 function download(name, obj) {
   const a = document.createElement('a');
@@ -518,6 +522,7 @@ function tableHTML(t, issues) {
 }
 function renderFarm() {
   const F = S.farm, tot = RR.farmTotals(F), issues = RR.validateFarm(F);
+  $('#farmRoute').innerHTML = S.routes.map(x => `<option value="${esc(x.id)}" ${x.id === S.cur ? 'selected' : ''}>${esc(x.name)}</option>`).join('');
   $('[data-g=notoriety]').innerHTML = [1, 2, 3, 4, 5].map(n => `<option value="${n}">${n} (Fence +${Math.round(RR.notorietyBonus('fence', n) * 100)}%)</option>`).join('');
   $('#baseType').innerHTML = Object.entries(CAT.bases).map(([k, b]) => `<option value="${k}">${esc(b.name)} (${b.workbenches} banco${b.workbenches > 1 ? 's' : ''})</option>`).join('');
   $$('[data-g]').forEach(el => { if (document.activeElement !== el) el.value = F[el.dataset.g]; });
@@ -529,6 +534,7 @@ function renderFarm() {
 }
 $('#tab-granja').addEventListener('change', e => {
   const el = e.target;
+  if (el.id === 'farmRoute') return commit(st => RR.ops.setCur(st, el.value), { allowErrors: true });
   if (el.dataset.g) return commit(st => RR.ops.setFarm(st, el.dataset.g, el.dataset.g === 'stacking' || el.dataset.g === 'baseType' ? el.value : +el.value));
   if (el.dataset.log !== undefined) return;
   const f = el.dataset.t, id = el.closest('.step')?.dataset.id; if (!f || !id) return;
@@ -574,7 +580,7 @@ const fmtTime = ms => { const s = Math.ceil(ms / 1000), h = Math.floor(s / 3600)
 function tick() {
   let ready = 0, changed = false;
   const now = Date.now();
-  for (const t of S.farm.tables) {
+  for (const t of [S.farm, ...Object.values(S.farms)].flatMap(f => f.tables)) { // todas las rutas: la producción sigue aunque cambies de ruta
     const el = document.querySelector(`[data-timer="${CSS.escape(t.id)}"]`), card = el?.closest('.step');
     if (!t.start) { if (el) el.textContent = 'Parado'; card?.classList.remove('ready'); continue; }
     const left = t.end - now;
@@ -584,7 +590,7 @@ function tick() {
     } else { if (el) el.textContent = 'Listo en ' + fmtTime(left); card?.classList.remove('ready'); }
   }
   if (changed) save();
-  const msg = JSON.stringify(RR.timerList(S.farm));
+  const msg = JSON.stringify(RR.timerList(S));
   if (host && msg !== lastSent) { lastSent = msg; host.postMessage({ timers: JSON.parse(msg) }); }
   document.title = ready ? `(${ready}) Producción lista · Rob Run` : 'Rob Run · Ruta de escalado';
 }

@@ -270,6 +270,38 @@ test('rutas incluidas: se añaden una vez por id; versión nueva avisa y se aña
   assert.equal(S.cur, cur);
 });
 
+test('cada ruta tiene su granja: cambiar de ruta cambia de granja sin perder nada', () => {
+  const S = RR.normState({ routes: [{ id: 'a', name: 'A', steps: [] }, { id: 'b', name: 'B', steps: [] }], cur: 'a' });
+  RR.ops.addStation(S, 'plant'); RR.ops.startStation(S, S.farm.tables[0].id, 1000);
+  RR.ops.setCur(S, 'b');
+  assert.equal(S.farm.tables.length, 0);
+  RR.ops.addStation(S, 'repack'); RR.ops.addStation(S, 'chem');
+  // los temporizadores de otras rutas siguen avisando
+  assert.equal(RR.timerList(S).length, 1);
+  assert.match(RR.timerList(S)[0].text, /\(A\)$/);
+  const back = RR.normState(JSON.parse(JSON.stringify(S))); // guardar y cargar
+  assert.deepEqual(RR.checkInvariants(back), []);
+  RR.ops.setCur(back, 'a');
+  assert.deepEqual(back.farm.tables.map(t => t.kind), ['plant']);
+  assert.deepEqual(back.farms.b.tables.map(t => t.kind), ['repack', 'chem']);
+  // duplicar copia la granja con los temporizadores parados; borrar una ruta se lleva su granja
+  RR.ops.duplicateRoute(back, 'a');
+  assert.equal(back.farm.tables.length, 1); assert.equal(back.farm.tables[0].start, null);
+  assert.notEqual(back.farm.tables[0].id, back.farms.a.tables[0].id);
+  RR.ops.deleteRoute(back, 'b');
+  assert.equal(back.farms.b, undefined);
+  assert.deepEqual(RR.checkInvariants(back), []);
+});
+
+test('migración 2 → 3: la granja única pasa a la ruta activa', () => {
+  const v2 = { schema: 2, routes: [{ id: 'a', name: 'A', steps: [] }, { id: 'b', name: 'Mi ruta', steps: [] }], cur: 'b', farm: { tables: [{ kind: 'plant', name: 'A-1', g: 6 }] } };
+  const { state, from, notes } = RR.migrate(v2);
+  assert.equal(from, 2); assert.equal(state.schema, 3);
+  assert.equal(state.farm.tables[0].name, 'A-1'); assert.equal(state.farmOf, 'b');
+  assert.ok(notes.some(n => n.includes('«Mi ruta»')));
+  RR.ops.setCur(state, 'a'); assert.equal(state.farm.tables.length, 0);
+});
+
 test('isNewer compara versiones semver de las releases', () => {
   assert.equal(RR.isNewer('v2.1.1', '2.1.0'), true);
   assert.equal(RR.isNewer('v2.10.0', '2.9.9'), true);

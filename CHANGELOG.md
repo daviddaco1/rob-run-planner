@@ -1,5 +1,11 @@
 # Cambios
 
+## 2.2.0 · 2026-11-24
+
+- **Cada ruta tiene su propia granja.** Al cambiar de ruta (en Ruta o con el nuevo selector de la pestaña Granja) cambian las estaciones, la notoriedad y el tipo de base. La granja que tenías pasa a la ruta activa; las demás empiezan vacías. Los temporizadores de todas las rutas siguen avisando.
+- Duplicar una ruta copia también su granja (con los temporizadores parados). «Nuevo wipe» empieza con la granja vacía. Borrar una ruta borra su granja (se puede deshacer).
+- Formato de datos 3: se migra solo y se guarda una copia antes.
+
 ## 2.1.0 · 2026-11-24
 
 - **Rutas incluidas nuevas:** «Contrabando: 4 bancos de reempaquetado» y «Taller químico: laboratorio al máximo». Se añaden solas a tu lista sin cambiar tu ruta activa.
