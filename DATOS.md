@@ -59,6 +59,14 @@ Kefir **no publica tablas de precios**. Sus notas de parche (por ejemplo, el 4 d
 - **No se pudieron leer:** metaforge.app (403), sportskeeda (405) y SteamDB (403). Las noticias de Steam se cargan con JavaScript; hay que revisarlas a mano.
 - **Cuidado:** el repositorio `GeneralAlternator/robrun-raid-calculator-2026` pide ejecutar un .exe como administrador y tiene etiquetas de «esp» y «trainer». Probablemente es malware: no lo enlaces ni lo uses.
 
+## Iconos
+
+- **Origen:** todos los iconos de la app están dibujados para este proyecto (`iconos.js`, SVG de 24×24 con trazo). Se publican con el resto del repositorio y no se descarga nada al usarlos.
+- **Por qué no se usan los del juego:** Kefir no publica un press kit ni unos términos que permitan redistribuir sus iconos. Las wikis de fans los muestran bajo «fair use», que no cubre meterlos en un programa público. Tampoco se pueden sacar de los archivos del juego (EULA y Easy Anti-Cheat). Revisado el 2026-11-24.
+- **Si Kefir publica sus recursos con licencia:** se pueden cambiar en `iconos.js` sin tocar nada más. Apunta la fuente y la licencia aquí.
+- **Cómo se enlazan:** `RR_ICONS.items` asigna un icono a cada id de `catalogo.js`; lo que no esté ahí usa el icono de su categoría (`RR_ICONS.cats`). La rareza del id (`_u`/`_e`/`_l`, `_2`/`_3`) colorea el borde (verde, morado, dorado). Un test comprueba que todos los elementos, tipos de paso, estaciones y fases tienen icono.
+- **Para un elemento nuevo:** añade su id a `items` en `iconos.js`, y si no hay un dibujo que encaje, añade uno nuevo a `P` con el mismo estilo (trazo `currentColor`, sin relleno, 24×24).
+
 ## Cómo actualizar los datos tras un parche
 
 1. **Busca los cambios.** Lee el parche en Steam (`store.steampowered.com/news/app/4262460`, en un navegador) y en los índices de parches de arriba. Apunta qué cifras cambian.

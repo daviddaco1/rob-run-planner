@@ -3,171 +3,484 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
 <title>Rob Run · Ruta de escalado</title>
 <!-- Herramienta 100% externa y manual: no lee ni toca el juego. Datos solo en este equipo (localStorage) + exportar/importar JSON.
-     Lógica y reglas en core.js, datos del juego en catalogo.js; este archivo solo pinta la interfaz. -->
+     Lógica y reglas en core.js, datos del juego en catalogo.js, iconos en iconos.js; este archivo solo pinta la interfaz. -->
 <style>
-:root{--bg:#121214;--card:#1c1c21;--line:#2e2e36;--text:#e9e9ec;--muted:#a3a3ad;--acc:#e0b23a;--ok:#4caf7a;--err:#e5534b;--warn:#e0943a;--info:#5b9bd5}
+/* ===== Sistema de diseño: tokens ===== */
+:root{
+  --bg:#0e0f12;--bg2:#14151a;--card:#1a1b21;--card2:#212229;--line:#2b2c35;--line2:#3a3b47;
+  --text:#ececf1;--muted:#a4a5b1;--faint:#767784;
+  --acc:#f2b632;--acc2:#ffcf5c;--acc-ink:#1b1404;--acc-soft:#f2b6321c;
+  --ok:#4cc38a;--err:#ef5a52;--warn:#f0993e;--info:#5ea8f2;
+  --ok-soft:#4cc38a1c;--err-soft:#ef5a5220;--warn-soft:#f0993e1f;--info-soft:#5ea8f21c;
+  --r-u:#4cc38a;--r-e:#a879ff;--r-l:#f2b632;
+  --k-title:#f2b632;--k-base:#8b97ff;--k-grow:#4cc38a;--k-smug:#f0993e;--k-chem:#3fc6d8;--k-def:#ef5a52;--k-other:#9aa0ad;
+  --q-g:#4cc38a;--q-p:#a879ff;--q-o:#f2b632;
+  --s1:.25rem;--s2:.5rem;--s3:.75rem;--s4:1rem;--s5:1.5rem;--s6:2rem;
+  --rad:12px;--rad-s:8px;--rad-xs:6px;
+  --font:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"Cascadia Mono",ui-monospace,Consolas,monospace;
+  --shadow:0 1px 0 #ffffff07 inset,0 8px 24px #0005;
+  --t:.16s cubic-bezier(.2,.7,.2,1);
+  --nav-w:0px;--aside-w:clamp(19rem,24vw,27rem);--top-h:3.6rem;
+}
+/* tipografía fluida: crece con la ventana (1280 px ≈ 14 px · 4K ≈ 18 px) y respeta el escalado DPI de Windows */
+html{font-size:clamp(14px,.25vw + 10.5px,18px);-webkit-text-size-adjust:100%}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
-main{max-width:980px;margin:0 auto;padding:16px}
-h1{font-size:22px;margin:0;color:var(--acc)}
-h2{font-size:15px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:24px 0 8px}
-h3{font-size:15px;margin:0 0 8px}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--text);font:1rem/1.45 var(--font);min-height:100vh}
+h1,h2,h3{margin:0;line-height:1.2}
+h1{font-size:1.3rem;font-weight:650;white-space:nowrap}
+h2{font-size:.85rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:650}
+h3{font-size:1rem;font-weight:650}
 a{color:var(--info)}
-input,select,textarea,button{font:inherit;color:var(--text);background:#25252c;border:1px solid var(--line);border-radius:6px;padding:6px 8px}
-button{cursor:pointer}button:hover:not(:disabled){border-color:var(--acc)}button:disabled{opacity:.5;cursor:not-allowed}
-:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
-textarea{width:100%;min-height:34px;resize:vertical;margin-top:6px}
-input[type=number]{width:120px}
-.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.grow{flex:1;min-width:160px}
-.card,.step{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px}
-.step.next{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
-.step.st-done{opacity:.6}
-.step.st-done [data-f=text]{text-decoration:line-through}
-.step.st-prov{border-style:dashed;border-color:var(--warn)}
-.step.st-blocked{border-left:4px solid var(--muted)}
-.step.has-err{border-color:var(--err)}
-.bar{flex:1;min-width:120px;height:8px;background:#2a2a31;border-radius:4px;overflow:hidden}
-.bar i{display:block;height:100%;background:var(--ok)}
-.tools{margin-left:auto;display:flex;gap:4px}
+p{margin:.4em 0}
 small,label{color:var(--muted)}
-.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
-.tabs button[aria-selected=true]{border-color:var(--acc);color:var(--acc)}
-.step.ready{opacity:1;border-color:var(--ok);box-shadow:0 0 0 2px var(--ok)}
-.timer{font-variant-numeric:tabular-nums;font-weight:600;min-width:150px}
-.stat b{color:var(--acc)}
-.badge{display:inline-block;font-size:12px;padding:1px 7px;border-radius:10px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
-.b-done{color:var(--ok);border-color:var(--ok)}.b-prov{color:var(--warn);border-color:var(--warn)}.b-progress{color:var(--acc);border-color:var(--acc)}.b-blocked{color:var(--text);background:#3a3a44}
-.c-confirmado,.c-jugador{color:var(--ok);border-color:var(--ok)}.c-una-fuente{color:var(--info);border-color:var(--info)}.c-discrepancia,.c-estimado{color:var(--warn);border-color:var(--warn)}.c-pendiente{color:var(--err);border-color:var(--err)}
-.issue{display:flex;gap:8px;align-items:flex-start;padding:6px 8px;border-radius:6px;margin:4px 0;background:#202027}
-.issue .ico{font-weight:700;min-width:16px}
-.l-error .ico,.l-error{color:#ff8a84}.l-warn .ico{color:var(--warn)}.l-info .ico{color:var(--info)}
-.issue .msg{flex:1;color:var(--text)}
-.subs{margin-top:8px;padding-left:12px;border-left:2px solid var(--line)}
-.subs summary{cursor:pointer;color:var(--muted);margin-bottom:6px}
-.sub{margin-bottom:4px}
-.sub input.grow{padding:4px 6px}
+small{font-size:.85rem}
+b{font-weight:650}
+
+/* ===== iconos ===== */
+.i{width:1.15em;height:1.15em;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.2em}
+.tile{display:inline-grid;place-items:center;width:2.1rem;height:2.1rem;flex:none;border-radius:var(--rad-s);background:color-mix(in srgb,var(--kc,var(--k-other)) 16%,transparent);color:var(--kc,var(--k-other));border:1px solid color-mix(in srgb,var(--kc,var(--k-other)) 30%,transparent);position:relative}
+.tile .i{width:1.25rem;height:1.25rem}
+.tile.sm{width:1.6rem;height:1.6rem;border-radius:var(--rad-xs)}.tile.sm .i{width:1rem;height:1rem}
+.tile.lg{width:2.8rem;height:2.8rem;border-radius:var(--rad)}.tile.lg .i{width:1.6rem;height:1.6rem}
+.tile.r-u{box-shadow:inset 0 -3px 0 var(--r-u)}.tile.r-e{box-shadow:inset 0 -3px 0 var(--r-e)}.tile.r-l{box-shadow:inset 0 -3px 0 var(--r-l)}
+.tile.empty{--kc:var(--faint);border-style:dashed}
+.k-title{--kc:var(--k-title)}.k-base{--kc:var(--k-base)}.k-grow,.k-plant{--kc:var(--k-grow)}.k-smug,.k-repack{--kc:var(--k-smug)}.k-chem{--kc:var(--k-chem)}.k-def{--kc:var(--k-def)}.k-other{--kc:var(--k-other)}.k-acc{--kc:var(--acc)}
+.dot{display:inline-block;width:.6em;height:.6em;border-radius:50%;background:var(--dc,var(--faint));vertical-align:.05em}
+.q-g{--dc:var(--q-g)}.q-p{--dc:var(--q-p)}.q-o{--dc:var(--q-o)}
+
+/* ===== controles ===== */
+input,select,textarea,button{font:inherit;color:var(--text);background:var(--card2);border:1px solid var(--line);border-radius:var(--rad-s);padding:.38rem .6rem;min-height:2.15rem;transition:border-color var(--t),background var(--t),box-shadow var(--t)}
+input:hover,select:hover,textarea:hover{border-color:var(--line2)}
+input:focus,select:focus,textarea:focus{border-color:var(--acc);outline:none;box-shadow:0 0 0 3px var(--acc-soft)}
+input[type=checkbox]{min-height:0;width:1.1rem;height:1.1rem;accent-color:var(--acc);padding:0;cursor:pointer;flex:none}
+input[type=number]{width:7.5rem;font-variant-numeric:tabular-nums}
+input.w-s{width:5rem}input.w-m{width:7.5rem}
+select{cursor:pointer}
+textarea{width:100%;min-height:2.3rem;resize:vertical}
+button{cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:.4rem;font-weight:550;white-space:nowrap}
+button:hover:not(:disabled){border-color:var(--acc);background:#2a2b33}
+button:active:not(:disabled){transform:translateY(1px)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+button.primary:hover:not(:disabled){background:var(--acc2);border-color:var(--acc2)}
+button.ghost{background:transparent;border-color:transparent}
+button.ghost:hover:not(:disabled){background:var(--card2);border-color:var(--line)}
+button.danger:hover:not(:disabled){border-color:var(--err);color:#ff8f88}
+button.icon{padding:.38rem;min-width:2.15rem}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ===== utilidades de maquetación ===== */
+.row{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center}
+.grow{flex:1 1 10rem;min-width:0}
+.col{display:flex;flex-direction:column;gap:var(--s2)}
+.fld{display:flex;flex-direction:column;gap:.3rem;font-size:.85rem;min-width:0}
+.fld>input,.fld>select{width:100%;font-size:1rem}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,9.5rem),1fr));gap:var(--s3)}
+.tools{margin-left:auto;display:flex;gap:.25rem;align-items:center}
+.mt{margin-top:var(--s3)}
+.scroll{overflow-x:auto}
+.empty{color:var(--muted);text-align:center;padding:var(--s5);border:1px dashed var(--line);border-radius:var(--rad);font-size:.9rem}
+
+/* ===== tarjetas ===== */
+.card,.step{background:var(--card);border:1px solid var(--line);border-radius:var(--rad);padding:var(--s4);box-shadow:var(--shadow)}
+.card+.card,.panel>*+*{margin-top:var(--s3)}
+.card-h{display:flex;align-items:center;gap:var(--s2);margin-bottom:var(--s3)}
+.card-h>.i{color:var(--acc)}
+.card-h h3{flex:1}
+
+/* ===== insignias, chips, barras ===== */
+.badge{display:inline-flex;align-items:center;gap:.25rem;font-size:.78rem;padding:.08rem .5rem;border-radius:999px;border:1px solid var(--line2);color:var(--muted);white-space:nowrap;font-weight:550}
+.badge .i{width:.95em;height:.95em}
+.b-done{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 50%,transparent);background:var(--ok-soft)}
+.b-prov{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 50%,transparent);background:var(--warn-soft)}
+.b-progress{color:var(--acc);border-color:color-mix(in srgb,var(--acc) 50%,transparent);background:var(--acc-soft)}
+.b-blocked{color:var(--text);background:#3a3a46;border-color:#4a4a58}
+.c-confirmado,.c-jugador{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 50%,transparent)}.c-una-fuente{color:var(--info);border-color:color-mix(in srgb,var(--info) 50%,transparent)}
+.c-discrepancia,.c-estimado{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 50%,transparent)}.c-pendiente{color:var(--err);border-color:color-mix(in srgb,var(--err) 50%,transparent)}
+.chips{display:flex;flex-wrap:wrap;gap:.35rem}
+.chip{display:inline-flex;gap:.35rem;align-items:center;background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:.12rem .2rem .12rem .25rem;font-size:.85rem;max-width:100%}
+.chip>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip button{padding:0 .3rem;min-height:1.4rem;border:0;background:none;color:var(--muted)}
+.chip button:hover{color:var(--err)}
+.chip button.on{color:var(--acc)}
+.chip.filter{padding:.2rem .7rem;cursor:pointer}
+.chip.filter[aria-pressed=true]{border-color:var(--acc);color:var(--acc);background:var(--acc-soft)}
+.bar{flex:1;min-width:6rem;height:.5rem;background:#272830;border-radius:999px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--ok),#6fe0a8);border-radius:inherit;transition:width .4s ease}
+.bar.acc i{background:linear-gradient(90deg,var(--acc),var(--acc2))}
+.bar.sm{height:.35rem;min-width:3rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,10rem),1fr));gap:var(--s2)}
+.kpi{background:var(--bg2);border:1px solid var(--line);border-radius:var(--rad-s);padding:.5rem .65rem;display:flex;gap:.55rem;align-items:center;min-width:0}
+.kpi>.i{color:var(--acc);width:1.3rem;height:1.3rem}
+.kpi span{display:flex;flex-direction:column;min-width:0}
+.kpi small{font-size:.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi b{font-size:1.05rem;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi.ok>.i{color:var(--ok)}.kpi.warn>.i{color:var(--warn)}
+.kpis.sm .kpi{padding:.35rem .5rem}.kpis.sm .kpi b{font-size:.95rem}
+.ring{--p:0;width:3.4rem;height:3.4rem;border-radius:50%;flex:none;display:grid;place-items:center;
+  background:radial-gradient(closest-side,var(--card) 76%,transparent 78% 100%),conic-gradient(var(--ok) calc(var(--p)*1%),#2a2b33 0)}
+.ring b{font-size:.85rem}
+
+/* ===== avisos, problemas y toasts ===== */
+.issue{display:flex;gap:.5rem;align-items:flex-start;flex-wrap:wrap;padding:.45rem .6rem;border-radius:var(--rad-s);margin:.35rem 0;background:var(--bg2);border:1px solid var(--line);border-left-width:3px}
+.issue>.i{margin-top:.1rem}
+.issue .msg{flex:1 1 12rem;color:var(--text);font-size:.92rem}
+.issue button{min-height:1.8rem;padding:.15rem .55rem;font-size:.85rem}
+.l-error{border-left-color:var(--err);background:var(--err-soft)}.l-error>.i{color:#ff8a84}
+.l-warn{border-left-color:var(--warn)}.l-warn>.i,small.l-warn{color:var(--warn)}
+.l-info{border-left-color:var(--info)}.l-info>.i{color:var(--info)}
+.notice{display:flex;gap:.6rem;align-items:center;border:1px solid var(--line);border-left:4px solid var(--info);background:var(--info-soft);padding:.55rem .75rem;border-radius:var(--rad-s);margin:0 0 var(--s2);animation:fade .25s ease}
+.notice>.i{color:var(--info)}
+.notice.n-error{border-left-color:var(--err);background:var(--err-soft)}.notice.n-error>.i{color:var(--err)}
+.notice.n-warn{border-left-color:var(--warn);background:var(--warn-soft)}.notice.n-warn>.i{color:var(--warn)}
+#toasts{position:fixed;right:1rem;bottom:1rem;display:flex;flex-direction:column;gap:.5rem;max-width:min(30rem,calc(100vw - 2rem));z-index:50}
+.toast{display:flex;gap:.6rem;background:#24252d;border:1px solid var(--line2);border-left:4px solid var(--info);border-radius:var(--rad-s);padding:.7rem .8rem;box-shadow:0 10px 30px #000a;animation:tin .22s cubic-bezier(.2,.8,.2,1)}
+.toast>.i{color:var(--info);margin-top:.1rem}
+.toast.t-error{border-left-color:var(--err)}.toast.t-error>.i{color:var(--err)}
+.toast.t-ok{border-left-color:var(--ok)}.toast.t-ok>.i{color:var(--ok)}
+@keyframes tin{from{opacity:0;transform:translateY(8px) scale(.98)}}
+@keyframes fade{from{opacity:0}}
+@keyframes pulse{50%{box-shadow:0 0 0 4px color-mix(in srgb,var(--ok) 35%,transparent)}}
+
+/* ===== tablas ===== */
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{border-bottom:1px solid var(--line);padding:.45rem .55rem;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;position:sticky;top:0;background:var(--card)}
+tr:hover td{background:#ffffff05}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.name{min-width:12rem}
+td.name .tile{vertical-align:middle;margin-right:.5rem}
+.tbl-wrap td:last-child{min-width:16rem}
+.mini{height:.3rem;background:#272830;border-radius:999px;margin-top:.25rem;min-width:3rem}
+.mini i{display:block;height:100%;border-radius:inherit;background:var(--acc)}
+
+/* ===== estructura: barra de navegación + contenido ===== */
+.app{display:grid;grid-template-columns:var(--nav-w) minmax(0,1fr);min-height:100vh}
+.nav{background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:var(--s3);padding:var(--s3) var(--s2);position:sticky;top:0;height:100vh;z-index:20}
+.brand{display:flex;align-items:center;gap:.6rem;padding:.2rem .35rem .6rem;border-bottom:1px solid var(--line)}
+.logo{width:2.3rem;height:2.3rem;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,var(--acc),#e07b26);color:var(--acc-ink);flex:none;box-shadow:0 4px 14px #f2b63233}
+.logo .i{width:1.35rem;height:1.35rem;stroke-width:2.2}
+.brand-t{display:flex;flex-direction:column;line-height:1.1}
+.brand-t b{font-size:1.05rem;letter-spacing:.02em}
+.brand-t small{font-size:.75rem;color:var(--acc);text-transform:uppercase;letter-spacing:.14em}
+.tabs{display:flex;flex-direction:column;gap:.2rem}
+.tabs button{justify-content:flex-start;gap:.7rem;background:transparent;border-color:transparent;color:var(--muted);padding:.55rem .7rem;font-weight:550;position:relative}
+.tabs button .i{width:1.25rem;height:1.25rem}
+.tabs button:hover{background:var(--card);color:var(--text);border-color:transparent}
+.tabs button[aria-selected=true]{background:var(--acc-soft);color:var(--acc)}
+.tabs button[aria-selected=true]::before{content:"";position:absolute;left:-.5rem;top:.45rem;bottom:.45rem;width:3px;border-radius:3px;background:var(--acc)}
+.tabs .cnt{margin-left:auto;background:var(--ok);color:#06210f;border-radius:999px;font-size:.72rem;padding:0 .4rem;font-weight:700}
+.nav-foot{margin-top:auto;display:flex;flex-direction:column;gap:.4rem;padding-top:.6rem;border-top:1px solid var(--line)}
+.nav-foot small{padding:0 .4rem;font-size:.72rem;color:var(--faint)}
+.main{min-width:0;display:flex;flex-direction:column}
+.top{position:sticky;top:0;z-index:15;display:flex;align-items:center;gap:var(--s3);min-height:var(--top-h);padding:.5rem var(--s5);background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top-t{display:flex;align-items:center;gap:.6rem;min-width:0}
+.top-t>.i{color:var(--acc);width:1.4rem;height:1.4rem}
+.top-t small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-kpi{display:flex;gap:.4rem;margin-left:auto;flex-wrap:wrap}
+.top-kpi .badge{font-size:.82rem;padding:.2rem .6rem;background:var(--card)}
+.top-kpi button.badge{min-height:0;cursor:pointer}
+.top-kpi .ready{color:var(--ok);border-color:var(--ok);animation:pulse 1.6s ease infinite}
+.wrap{padding:var(--s4) var(--s5) var(--s6);width:100%;max-width:3400px;margin:0 auto}
+
+/* contenido + panel lateral (Ruta y Granja) */
+.split{display:grid;gap:var(--s4);grid-template-columns:minmax(0,1fr);align-items:start}
+.panel{min-width:0}
+.content{min-width:0;container-type:inline-size}
+
+/* ===== RUTA ===== */
+.phase{margin-bottom:var(--s5)}
+.phase-h{display:flex;align-items:center;gap:var(--s3);margin-bottom:var(--s3);flex-wrap:wrap}
+.phase-h .count{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.85rem}
+.phase-h .bar{max-width:12rem}
+.phase-h button{margin-left:auto}
+.steps{display:grid;gap:var(--s3);grid-template-columns:minmax(0,1fr);align-items:start}
+@container (min-width:1180px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container (min-width:1900px){.steps{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.step{padding:var(--s3) var(--s4);transition:border-color var(--t),box-shadow var(--t),opacity var(--t);position:relative;min-width:0}
+.step-h{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap}
+.step-h .num{font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;min-width:1.8rem}
+.step-h input.title{flex:1 1 12rem;font-weight:600;background:transparent;border-color:transparent;padding-left:.35rem}
+.step-h input.title:hover{border-color:var(--line)}
+.step-h input.title:focus{background:var(--card2)}
+.step-b{margin-top:var(--s2);display:flex;flex-direction:column;gap:var(--s2)}
+.step-b>.row{gap:var(--s2) var(--s3)}
+.sel-i{display:inline-flex;align-items:center;gap:.35rem;background:var(--card2);border:1px solid var(--line);border-radius:var(--rad-s);padding-left:.5rem;color:var(--acc)}
+.sel-i select{border:0;background:transparent;padding-left:.1rem;color:var(--text)}
+.sel-i select:focus{box-shadow:none}
+.sel-i:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-soft)}
+.inl{display:inline-flex;align-items:center;gap:.4rem}
+.deps{color:var(--muted)}
+.deps>.i{color:var(--faint)}
+.step .tools button{min-height:1.9rem;padding:.25rem;min-width:1.9rem;background:transparent;border-color:transparent;color:var(--muted)}
+.step .tools button:hover{color:var(--text);border-color:var(--line2);background:var(--card2)}
+.step .tools button[data-act=del]:hover,.step .tools button[data-tact=del]:hover{color:#ff8f88;border-color:var(--err)}
+.step.next{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 8px 28px #f2b63214}
+.step.next::after{content:"Siguiente";position:absolute;top:-.6rem;right:.9rem;background:var(--acc);color:var(--acc-ink);font-size:.7rem;font-weight:700;padding:.05rem .5rem;border-radius:999px;text-transform:uppercase;letter-spacing:.06em}
+.step.st-done{opacity:.72;background:var(--bg2)}
+.step.st-done input.title{text-decoration:line-through;text-decoration-color:var(--faint)}
+.step.st-done:not(.open) .step-b{display:none}
+.step.st-prov{border-style:dashed;border-color:var(--warn)}
+.step.st-blocked{border-left:4px solid #5a5a68}
+.step.has-err{border-color:var(--err);box-shadow:0 0 0 1px color-mix(in srgb,var(--err) 40%,transparent)}
+.subs{padding-left:var(--s3);border-left:2px solid var(--line)}
+.subs summary{cursor:pointer;color:var(--muted);margin-bottom:.4rem;font-size:.9rem;display:flex;align-items:center;gap:.4rem;list-style:none}
+.subs summary::-webkit-details-marker{display:none}
+.subs summary .i{transition:transform var(--t)}
+.subs[open] summary .i.chev{transform:rotate(90deg)}
+.sub{margin-bottom:.3rem;flex-wrap:nowrap}
+.sub input.grow{padding:.25rem .5rem;min-height:1.9rem}
 .sub.sdone input.grow{text-decoration:line-through;opacity:.6}
 .sub.snext input.grow{border-color:var(--acc)}
-.chip{display:inline-flex;gap:4px;align-items:center;background:#2a2a33;border:1px solid var(--line);border-radius:12px;padding:1px 4px 1px 8px;font-size:13px}
-.chip button{padding:0 6px;border:0;background:none}
-.notice{border-left:4px solid var(--info);background:#1d2430;padding:8px 10px;border-radius:6px;margin:6px 0}
-.notice.n-error{border-color:var(--err);background:#2d1d1d}.notice.n-warn{border-color:var(--warn);background:#2d261b}
-#toasts{position:fixed;right:12px;bottom:12px;display:flex;flex-direction:column;gap:6px;max-width:min(440px,calc(100vw - 24px));z-index:10}
-.toast{background:#26262e;border:1px solid var(--line);border-left:4px solid var(--info);border-radius:8px;padding:10px;box-shadow:0 4px 16px #0008}
-.toast.t-error{border-left-color:var(--err)}.toast.t-ok{border-left-color:var(--ok)}
-table{border-collapse:collapse;width:100%;font-size:14px}
-th,td{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left;vertical-align:top}
-th{color:var(--muted);font-weight:600}
-td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-.scroll{overflow-x:auto}
-.empty{color:var(--muted);text-align:center;padding:18px}
-@media (max-width:600px){main{padding:10px}.tools{margin-left:0}input[type=number]{width:96px}}
+.sub button{min-height:1.9rem;padding:.25rem;background:transparent;border-color:transparent;color:var(--muted)}
+.next-card{border-color:color-mix(in srgb,var(--acc) 45%,var(--line))}
+.next-card .title{font-weight:650;flex:1;min-width:0}
+.quick{display:flex;gap:.5rem;align-items:center;padding:.45rem .6rem;border-radius:var(--rad-s);background:var(--bg2);border:1px solid var(--line);cursor:pointer;color:var(--text)}
+.quick:hover{border-color:var(--acc)}
+.progress-h{display:flex;gap:var(--s3);align-items:center}
+.progress-h>div{min-width:0}
+.btns{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,7.4rem),1fr));gap:.35rem}
+.btns button{justify-content:flex-start;font-size:.88rem}
+
+/* ===== GRANJA ===== */
+.stations{display:grid;gap:var(--s3);grid-template-columns:repeat(auto-fill,minmax(min(100%,22rem),1fr));align-items:start}
+.station{display:flex;flex-direction:column;gap:var(--s3);border-top:3px solid var(--kc)}
+.st-h{display:flex;gap:var(--s2);align-items:center}
+.st-h .col{gap:0;flex:1;min-width:0}
+.st-h small{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em}
+.st-h input{background:transparent;border-color:transparent;font-weight:650;padding-left:.2rem;width:100%}
+.st-h input:hover{border-color:var(--line)}
+.st-timer{display:flex;flex-direction:column;gap:.35rem;background:var(--bg2);border:1px solid var(--line);border-radius:var(--rad-s);padding:.55rem .7rem}
+.timer{font-variant-numeric:tabular-nums;font-weight:700;font-size:1.15rem;display:flex;align-items:center;gap:.45rem}
+.timer .i{color:var(--muted)}
+.station.ready{border-color:var(--ok);box-shadow:0 0 0 2px var(--ok);animation:pulse 1.8s ease infinite}
+.station.ready .timer{color:var(--ok)}.station.ready .timer .i{color:var(--ok)}
+.upgs{display:flex;flex-wrap:wrap;gap:.4rem}
+.upg{display:inline-flex;align-items:center;gap:.45rem;padding:.25rem .55rem .25rem .3rem;border:1px solid var(--line);border-radius:var(--rad-s);background:var(--bg2);cursor:pointer;font-size:.85rem;color:var(--muted);transition:border-color var(--t),background var(--t)}
+.upg:hover{border-color:var(--line2)}
+.upg:has(input:checked){border-color:color-mix(in srgb,var(--ok) 60%,transparent);background:var(--ok-soft);color:var(--text)}
+.upg b{color:var(--ok);font-weight:650}
+.station .body{gap:var(--s2) var(--s3)}
+.station .body label{display:inline-flex;align-items:center;gap:.4rem;font-size:.88rem}
+.station details summary{cursor:pointer;color:var(--muted);font-size:.85rem}
+.farm-bar{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center}
+.farm-bar .tools{flex-wrap:wrap}
+.cfg>summary{list-style:none;cursor:pointer}
+.cfg>summary::-webkit-details-marker{display:none}
+.cfg>summary .chev{transition:transform var(--t)}
+.cfg[open]>summary .chev{transform:rotate(90deg)}
+
+/* ===== CALCULADORAS, DATOS, COPIAS ===== */
+.cards{display:grid;gap:var(--s3);grid-template-columns:repeat(auto-fit,minmax(min(100%,30rem),1fr));align-items:start}
+.cards>.card{margin:0}
+.cards>.span{grid-column:1/-1}
+.search{display:inline-flex;align-items:center;gap:.4rem;background:var(--card2);border:1px solid var(--line);border-radius:var(--rad-s);padding-left:.6rem;color:var(--muted)}
+.search input{border:0;background:transparent;min-width:0;flex:1}
+.search input:focus{box-shadow:none}
+.search:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-soft)}
+.tbl-wrap{overflow:auto;max-height:calc(100vh - 12rem);border-radius:var(--rad-s)}
+
+/* ===== selector visual de elementos (diálogo) ===== */
+dialog{background:var(--card);color:var(--text);border:1px solid var(--line2);border-radius:var(--rad);padding:0;width:min(52rem,calc(100vw - 1.5rem));max-height:min(88vh,48rem);box-shadow:0 30px 80px #000c}
+dialog[open]{overflow:auto;overscroll-behavior:contain;animation:tin .2s ease}
+.pk-h{position:sticky;top:0;background:var(--card);z-index:1}
+dialog::backdrop{background:#000a;backdrop-filter:blur(2px)}
+.pk-h{display:flex;flex-direction:column;gap:var(--s2);padding:var(--s4);border-bottom:1px solid var(--line)}
+.pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,14.5rem),1fr));gap:.4rem;padding:var(--s3) var(--s4) var(--s4)}
+.pick-grid button{justify-content:flex-start;text-align:left;gap:.6rem;padding:.45rem .55rem;white-space:normal;font-weight:500;min-height:3.4rem}
+.pick-grid button span{display:flex;flex-direction:column;min-width:0}
+.pick-grid button small{font-size:.75rem}
+
+/* ===== puntos de corte ===== */
+/* ventana pequeña: menú arriba en horizontal */
+@media (max-width:1023.98px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .nav{position:sticky;top:0;height:auto;flex-direction:row;align-items:center;padding:.4rem .6rem;border-right:0;border-bottom:1px solid var(--line);overflow-x:auto;gap:.5rem}
+  .brand{border:0;padding:0}
+  .tabs{flex-direction:row}
+  .tabs button{padding:.45rem .6rem}
+  .tabs button[aria-selected=true]::before{left:.6rem;right:.6rem;top:auto;bottom:-.4rem;width:auto;height:3px}
+  .nav-foot{display:none}
+  .top{position:static;padding:.5rem var(--s4)}
+  .wrap{padding:var(--s3) var(--s4) var(--s5)}
+}
+@media (max-width:760px){.brand-t{display:none}.tabs button span{display:none}.tabs button{padding:.5rem}.top-t small{display:none}.top .lbl{display:none}}
+@media (max-width:520px){
+  .wrap{padding:var(--s2) var(--s2) var(--s5)}
+  .card,.step{padding:var(--s3)}
+  .top{padding:.4rem var(--s2);flex-wrap:wrap}
+  input[type=number]{width:6rem}
+  .step-h .badge{display:none}
+}
+/* escritorio: barra lateral (estrecha) */
+@media (min-width:1024px){
+  :root{--nav-w:4.6rem}
+  .brand-t,.tabs button span,.nav-foot .lbl,.nav-foot small{display:none}
+  .tabs button{justify-content:center;padding:.65rem}
+  .tabs .cnt{position:absolute;top:.15rem;right:.15rem}
+  #navToggle{display:none}
+  .split{grid-template-columns:minmax(0,1fr) var(--aside-w)}
+  .split>.panel{grid-column:2;grid-row:1;position:sticky;top:calc(var(--top-h) + var(--s3));max-height:calc(100vh - var(--top-h) - var(--s5));overflow:auto;padding-right:2px;scrollbar-width:thin}
+  .split>.content{grid-column:1;grid-row:1}
+}
+/* escritorio ancho: barra lateral con texto (plegable) */
+@media (min-width:1360px){
+  .app:not(.nav-mini){--nav-w:14rem}
+  .app:not(.nav-mini) .brand-t,.app:not(.nav-mini) .tabs button span,.app:not(.nav-mini) .nav-foot .lbl,.app:not(.nav-mini) .nav-foot small{display:revert}
+  .app:not(.nav-mini) .tabs button{justify-content:flex-start}
+  .app:not(.nav-mini) .tabs .cnt{position:static}
+  #navToggle{display:inline-flex}
+  .app.nav-mini #navToggle{justify-content:center}
+}
+@media (min-width:2200px){:root{--aside-w:30rem}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (forced-colors:active){.tile,.badge,.chip{border:1px solid CanvasText}}
 </style>
 </head>
 <body>
-<main>
-  <div class="row">
-    <h1>Rob Run · Ruta de escalado</h1>
-    <small id="ver"></small>
-    <span class="tools">
-      <button id="undo" title="Deshacer (Ctrl+Z)" disabled>↶ Deshacer</button>
-      <button id="redo" title="Rehacer (Ctrl+Y)" disabled>↷ Rehacer</button>
-    </span>
+<div class="app" id="app">
+  <aside class="nav" aria-label="Secciones">
+    <div class="brand"><span class="logo"><svg class="i" aria-hidden="true"><use href="#i-route"/></svg></span><span class="brand-t"><b>Rob Run</b><small>Planner</small></span></div>
+    <nav class="tabs" role="tablist" aria-orientation="vertical">
+      <button role="tab" data-tab="ruta" title="Ruta"><svg class="i" aria-hidden="true"><use href="#i-route"/></svg><span>Ruta</span></button>
+      <button role="tab" data-tab="granja" title="Granja"><svg class="i" aria-hidden="true"><use href="#i-planter"/></svg><span>Granja</span><em class="cnt" id="navReady" hidden></em></button>
+      <button role="tab" data-tab="calc" title="Calculadoras"><svg class="i" aria-hidden="true"><use href="#i-calc"/></svg><span>Calculadoras</span></button>
+      <button role="tab" data-tab="datos" title="Datos del juego"><svg class="i" aria-hidden="true"><use href="#i-book"/></svg><span>Datos del juego</span></button>
+      <button role="tab" data-tab="copias" title="Copias"><svg class="i" aria-hidden="true"><use href="#i-db"/></svg><span>Copias</span></button>
+    </nav>
+    <div class="nav-foot">
+      <button id="navToggle" class="ghost" title="Plegar o desplegar el menú"><svg class="i" aria-hidden="true"><use href="#i-panel"/></svg><span class="lbl">Plegar menú</span></button>
+      <small id="ver"></small>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="top">
+      <div class="top-t"><svg class="i" aria-hidden="true" id="pageIcon"><use href="#i-route"/></svg><h1 id="pageTitle">Ruta</h1><small id="pageSub"></small></div>
+      <div class="top-kpi" id="topKpi"></div>
+      <span class="tools">
+        <button id="undo" class="ghost" title="Deshacer (Ctrl+Z)" disabled><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg><span class="lbl">Deshacer</span></button>
+        <button id="redo" class="ghost" title="Rehacer (Ctrl+Y)" disabled><svg class="i" aria-hidden="true"><use href="#i-redo"/></svg><span class="lbl">Rehacer</span></button>
+      </span>
+    </header>
+    <main class="wrap">
+      <div id="notices" aria-live="polite"></div>
+
+      <section id="tab-ruta" role="tabpanel" class="split">
+        <aside class="panel">
+          <div class="card">
+            <div class="card-h"><svg class="i" aria-hidden="true"><use href="#i-route"/></svg><h3>Ruta activa</h3></div>
+            <select id="routes" aria-label="Ruta" style="width:100%"></select>
+            <div class="btns mt">
+              <button id="newRoute"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg>Nueva ruta</button>
+              <button id="dupRoute" title="Copia exacta de la ruta, con su progreso"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg>Duplicar</button>
+              <button id="newWipe" title="Copia la ruta con el progreso a cero"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg>Nuevo wipe</button>
+              <button id="exportRoute"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Exportar ruta</button>
+              <button id="importBtn"><svg class="i" aria-hidden="true"><use href="#i-upload"/></svg>Importar</button>
+              <button id="delRoute" class="danger"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg>Borrar</button>
+            </div>
+            <input id="importFile" type="file" accept=".json,application/json" hidden>
+            <label class="fld mt" for="name">Nombre<input id="name" maxlength="120"></label>
+            <label class="fld mt" for="goal">Meta final<input id="goal" maxlength="300" placeholder="Ej: título tier 3 + talleres al máximo"></label>
+            <div class="fld mt">
+              <label for="haveIn" title="Cosas que ya tienes de antes: cuentan como requisito cumplido">Ya tengo</label>
+              <span id="haveChips" class="chips"></span>
+              <div class="row" style="flex-wrap:nowrap">
+                <input id="haveIn" list="catItems" placeholder="Añadir (ej. Land Plot Title Nv1)" class="grow">
+                <button id="havePick" class="icon" title="Elegir del catálogo" aria-label="Elegir del catálogo"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg></button>
+              </div>
+            </div>
+            <div id="draftBar"></div>
+          </div>
+          <div class="card">
+            <div class="progress-h">
+              <div class="ring" id="ring"><b id="ringTxt"></b></div>
+              <div class="col grow" style="gap:.3rem"><div class="bar" role="progressbar" aria-label="Progreso de la ruta"><i id="total"></i></div><small id="totalTxt"></small></div>
+            </div>
+            <div class="kpis mt" id="routeStats"></div>
+          </div>
+          <div id="nextCard"></div>
+          <div id="issues"></div>
+        </aside>
+        <div class="content" id="phases"></div>
+      </section>
+
+      <section id="tab-granja" role="tabpanel" class="split" hidden>
+        <aside class="panel">
+          <details class="card cfg" id="farmCfg" open>
+            <summary class="card-h" style="margin:0"><svg class="i" aria-hidden="true"><use href="#i-sliders"/></svg><h3>Ajustes de la granja</h3><svg class="i chev" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+            <div class="mt col" style="gap:var(--s3)">
+              <label class="fld" for="farmRoute">Granja de la ruta<select id="farmRoute"></select></label>
+              <small>Cada ruta tiene su propia granja. Los avisos de todas siguen sonando.</small>
+              <div class="fgrid">
+                <label class="fld">Ciclo base de planta (min)<input type="number" min="1" step="any" data-g="base"></label>
+                <label class="fld">Bolsas por planta<input type="number" min="0" step="0.5" data-g="bags"></label>
+                <label class="fld">Notoriedad<select data-g="notoriety"></select></label>
+                <label class="fld" title="Bonus extra (edificios del distrito, eventos...)">Bonus extra %<input type="number" min="0" data-g="bonus"></label>
+                <label class="fld"><span><i class="dot q-g"></i> Precio bolsa verde</span><input type="number" min="0" data-g="pg"></label>
+                <label class="fld"><span><i class="dot q-p"></i> Bolsa morada</span><input type="number" min="0" data-g="pp"></label>
+                <label class="fld"><span><i class="dot q-o"></i> Bolsa dorada</span><input type="number" min="0" data-g="po"></label>
+                <label class="fld">Tier del laptop<select data-g="tier"><option>1</option><option>2</option><option>3</option></select></label>
+                <label class="fld">Base<select data-g="baseType" id="baseType"></select></label>
+              </div>
+              <label class="fld">Mejoras de velocidad<select data-g="stacking">
+                <option value="add">Se suman (60 → 40 min con las 3)</option>
+                <option value="mult">Se multiplican (60 → 38 min)</option>
+                <option value="reduce">Restan tiempo (60 → 30 min)</option></select></label>
+              <small>Valores de wikis de fans (nov 2026), ajústalos a tu servidor. Detalle y fuentes en «Datos del juego».</small>
+            </div>
+          </details>
+        </aside>
+        <div class="content">
+          <div class="card farm-bar">
+            <button data-addst="plant"><span class="tile sm k-plant"><svg class="i" aria-hidden="true"><use href="#i-planter"/></svg></span>Mesa de cultivo</button>
+            <button data-addst="repack"><span class="tile sm k-repack"><svg class="i" aria-hidden="true"><use href="#i-crate"/></svg></span>Banco de contrabando</button>
+            <button data-addst="chem"><span class="tile sm k-chem"><svg class="i" aria-hidden="true"><use href="#i-flask"/></svg></span>Taller químico</button>
+            <span class="tools">
+              <button id="startAll" class="primary"><svg class="i" aria-hidden="true"><use href="#i-play"/></svg>Iniciar todas ahora</button>
+              <button id="notify"><svg class="i" aria-hidden="true"><use href="#i-bell"/></svg>Activar avisos del navegador</button>
+            </span>
+          </div>
+          <div class="kpis mt" id="farmSum"></div>
+          <div id="farmIssues" class="mt"></div>
+          <div id="tables" class="stations mt"></div>
+        </div>
+      </section>
+
+      <section id="tab-calc" role="tabpanel" hidden><div id="calcBody" class="cards"></div></section>
+      <section id="tab-datos" role="tabpanel" hidden><div id="datosBody"></div></section>
+      <section id="tab-copias" role="tabpanel" hidden><div id="copiasBody" class="cards"></div></section>
+    </main>
   </div>
-  <div id="notices" aria-live="polite"></div>
-  <nav class="tabs" role="tablist">
-    <button role="tab" data-tab="ruta">Ruta</button>
-    <button role="tab" data-tab="granja">Granja</button>
-    <button role="tab" data-tab="calc">Calculadoras</button>
-    <button role="tab" data-tab="datos">Datos del juego</button>
-    <button role="tab" data-tab="copias">Copias</button>
-  </nav>
-
-  <section id="tab-ruta" role="tabpanel">
-    <div class="card">
-      <div class="row">
-        <label for="routes" class="grow" style="min-width:200px"><select id="routes" style="width:100%" aria-label="Ruta"></select></label>
-        <button id="newRoute">Nueva ruta</button>
-        <button id="dupRoute" title="Copia exacta de la ruta, con su progreso">Duplicar</button>
-        <button id="newWipe" title="Copia la ruta con el progreso a cero">Nuevo wipe</button>
-        <button id="delRoute">Borrar</button>
-        <button id="exportRoute">Exportar ruta</button>
-        <button id="importBtn">Importar</button>
-        <input id="importFile" type="file" accept=".json,application/json" hidden>
-      </div>
-      <div class="row" style="margin-top:8px"><label for="name">Nombre</label><input id="name" class="grow" maxlength="120"></div>
-      <div class="row" style="margin-top:8px"><label for="goal">Meta final</label><input id="goal" class="grow" maxlength="300" placeholder="Ej: título tier 3 + talleres al máximo"></div>
-      <div class="row" style="margin-top:8px">
-        <label for="haveIn" title="Cosas que ya tienes de antes: cuentan como requisito cumplido">Ya tengo</label>
-        <span id="haveChips" class="row"></span>
-        <input id="haveIn" list="catItems" placeholder="Añadir (ej. Land Plot Title Nv1)" style="min-width:220px">
-      </div>
-      <div id="draftBar"></div>
-      <div class="row" style="margin-top:10px"><div class="bar" role="progressbar" aria-label="Progreso de la ruta"><i id="total"></i></div><small id="totalTxt"></small></div>
-      <div class="row stat" id="routeStats" style="margin-top:6px"></div>
-    </div>
-    <div id="issues"></div>
-    <div id="phases"></div>
-  </section>
-
-  <section id="tab-granja" role="tabpanel" hidden>
-    <div class="card">
-      <div class="row" style="margin-bottom:8px">
-        <label for="farmRoute">Granja de la ruta</label><select id="farmRoute" class="grow" style="min-width:200px"></select>
-        <small>Cada ruta tiene su propia granja. Los avisos de todas siguen sonando.</small>
-      </div>
-      <div class="row">
-        <label>Ciclo base de planta (min) <input type="number" min="1" step="any" data-g="base"></label>
-        <label>Bolsas por planta <input type="number" min="0" step="0.5" data-g="bags"></label>
-        <label>Notoriedad <select data-g="notoriety"></select></label>
-        <label title="Bonus extra (edificios del distrito, eventos...)">Bonus extra % <input type="number" min="0" data-g="bonus" style="width:80px"></label>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <label>Precio bolsa · verde <input type="number" min="0" data-g="pg"></label>
-        <label>morada <input type="number" min="0" data-g="pp"></label>
-        <label>dorada <input type="number" min="0" data-g="po"></label>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <label>Mejoras de velocidad <select data-g="stacking">
-          <option value="add">Se suman (60 → 40 min con las 3)</option>
-          <option value="mult">Se multiplican (60 → 38 min)</option>
-          <option value="reduce">Restan tiempo (60 → 30 min)</option></select></label>
-        <label>Tier del laptop <select data-g="tier"><option>1</option><option>2</option><option>3</option></select></label>
-        <label>Base <select data-g="baseType" id="baseType"></select></label>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <button data-addst="plant">+ Mesa de cultivo</button>
-        <button data-addst="repack">+ Banco de contrabando</button>
-        <button data-addst="chem">+ Taller químico</button>
-        <button id="startAll">Iniciar todas ahora</button>
-        <button id="notify">Activar avisos del navegador</button>
-      </div>
-      <div class="row stat" id="farmSum" style="margin-top:8px"></div>
-      <small>Valores de wikis de fans (nov 2026), ajústalos a tu servidor. Detalle y fuentes en «Datos del juego».</small>
-    </div>
-    <div id="farmIssues"></div>
-    <div id="tables"></div>
-  </section>
-
-  <section id="tab-calc" role="tabpanel" hidden><div id="calcBody"></div></section>
-  <section id="tab-datos" role="tabpanel" hidden><div id="datosBody"></div></section>
-  <section id="tab-copias" role="tabpanel" hidden><div id="copiasBody"></div></section>
-</main>
+</div>
+<dialog id="picker" aria-labelledby="pickT">
+  <div class="pk-h">
+    <div class="row"><svg class="i" aria-hidden="true" style="color:var(--acc)"><use href="#i-search"/></svg><h3 id="pickT" class="grow">Elegir elemento del juego</h3>
+      <button id="pickClose" class="icon ghost" aria-label="Cerrar"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+    <label class="search"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg><input id="pickQ" placeholder="Buscar por nombre, tipo o nota…" autocomplete="off" aria-label="Buscar en el catálogo"></label>
+    <div class="chips" id="pickCats"></div>
+  </div>
+  <div id="pickList" class="pick-grid"></div>
+</dialog>
 <datalist id="catItems"></datalist>
 <div id="toasts" aria-live="assertive"></div>
 
 <script src="catalogo.js"></script>
 <script src="core.js"></script>
+<script src="iconos.js" onerror="0"></script>
 <script src="rutas-incluidas.js" onerror="0"></script>
 <script>
 'use strict';
-const KEY = 'robrun-rutas-v1', BKEY = 'robrun-backups';
+const KEY = 'robrun-rutas-v1', BKEY = 'robrun-backups', UIKEY = 'robrun-ui';
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const { esc, clone } = RR;
 const CAT = window.RR_CATALOG;
+const IC = window.RR_ICONS; // iconos.js (si faltara, la app funciona igual sin iconos)
 const fmt = RR.fmtN;
 const money = n => '$' + fmt(n);
 const hrs = h => h == null ? '—' : h < 1 ? Math.round(h * 60) + ' min' : h < 48 ? h.toFixed(1) + ' h' : (h / 24).toFixed(1) + ' días';
@@ -176,6 +489,20 @@ const CONF = { confirmado: 'confirmado', 'una-fuente': 'una fuente', discrepanci
 const confBadge = c => c ? `<span class="badge c-${esc(c)}" title="Confianza del dato">${esc(CONF[c] || c)}</span>` : '';
 const itemName = id => CAT.items[id]?.name || id;
 const host = window.chrome?.webview;
+const TABS = { ruta: ['Ruta', 'route', 'Pasos por fase, dependencias y validación'], granja: ['Granja', 'planter', 'Estaciones, mejoras y temporizadores'],
+  calc: ['Calculadoras', 'calc', 'Rentabilidad, mejoras y simulador'], datos: ['Datos del juego', 'book', 'Catálogo con fuentes y nivel de confianza'], copias: ['Copias', 'db', 'Copias de seguridad y actualizaciones'] };
+
+// ---------- iconos ----------
+if (IC) document.body.insertAdjacentHTML('afterbegin', IC.sprite());
+const ico = (n, cls = '') => IC?.paths[n] ? `<svg class="i ${cls}" aria-hidden="true"><use href="#i-${n}"/></svg>` : '';
+const tile = (n, cls = '', title = '') => `<span class="tile ${cls}"${title ? ` title="${esc(title)}"` : ''}>${ico(n)}</span>`;
+const itemTip = it => [it.name, it.research ? 'investigación ' + money(it.research) : '', it.buy ? 'compra ' + money(it.buy) : '', 'tier ' + (it.tier || 1), it.conf ? 'dato ' + (CONF[it.conf] || it.conf) : ''].filter(Boolean).join(' · ');
+function itemIcon(id, size = '') {
+  const it = CAT.items[id]; if (!it) return tile('task', `empty ${size}`);
+  const c = IC?.cats[it.cat] || {};
+  return tile(IC?.items[id] || c.icon || 'task', `${c.cls || 'k-other'} ${IC?.rarity(id) || ''} ${size}`, itemTip(it));
+}
+const LVL = { error: 'error', warn: 'warn', info: 'info' };
 
 // ---------- persistencia ----------
 const storage = {
@@ -223,6 +550,12 @@ for (const n of RR.syncIncluded(S, window.RUTAS || [])) {
 }
 save();
 window.addEventListener('storage', e => { if (e.key === KEY) notice('Los datos se cambiaron en otra ventana.', 'warn', [{ label: 'Recargar', fn: () => location.reload() }]); });
+// preferencias de esta pantalla (no son datos del usuario: solo el menú plegado)
+const ui = (() => { try { return JSON.parse(storage.get(UIKEY)) || {}; } catch { return {}; } })();
+const saveUI = () => storage.set(UIKEY, JSON.stringify(ui));
+$('#app').classList.toggle('nav-mini', !!ui.navMini);
+$('#navToggle').onclick = () => { ui.navMini = !ui.navMini; saveUI(); $('#app').classList.toggle('nav-mini', ui.navMini); };
+if (innerWidth < 700) $('#farmCfg').open = false; // en ventanas pequeñas los ajustes empiezan plegados
 
 // ---------- cambios atómicos + deshacer ----------
 // Cada cambio se aplica sobre una copia, se normaliza y se valida. Si mete errores nuevos en una ruta activa (no borrador)
@@ -269,26 +602,65 @@ document.addEventListener('keydown', e => {
 function toast(msg, kind = 'info', actions = []) {
   const el = document.createElement('div');
   el.className = `toast t-${kind}`; el.setAttribute('role', kind === 'error' ? 'alert' : 'status');
-  el.innerHTML = `<div>${esc(msg)}</div>${actions.length ? `<div class="row" style="margin-top:6px">${actions.map((a, i) => `<button data-i="${i}">${esc(a.label)}</button>`).join('')}<button data-close>Cerrar</button></div>` : ''}`;
+  el.innerHTML = `${ico(kind === 'error' ? 'error' : kind === 'ok' ? 'check' : 'info')}<div class="grow"><div>${esc(msg)}</div>${actions.length ? `<div class="row" style="margin-top:.5rem">${actions.map((a, i) => `<button data-i="${i}">${esc(a.label)}</button>`).join('')}<button data-close class="ghost">Cerrar</button></div>` : ''}</div>`;
   el.onclick = e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.i) actions[+b.dataset.i].fn(); el.remove(); };
   $('#toasts').append(el);
   setTimeout(() => el.remove(), actions.length ? 15000 : 6000);
 }
 function renderNotices() {
-  $('#notices').innerHTML = notices.map((n, i) => `<div class="notice n-${n.level}"><div class="row"><span class="grow">${esc(n.msg)}</span>
-    ${n.actions.map((a, j) => `<button data-n="${i}" data-a="${j}">${esc(a.label)}</button>`).join('')}<button data-n="${i}" data-x aria-label="Cerrar aviso">✕</button></div></div>`).join('');
+  $('#notices').innerHTML = notices.map((n, i) => `<div class="notice n-${n.level}">${ico(LVL[n.level] || 'info')}<span class="grow">${esc(n.msg)}</span>
+    ${n.actions.map((a, j) => `<button data-n="${i}" data-a="${j}">${esc(a.label)}</button>`).join('')}<button data-n="${i}" data-x class="icon ghost" aria-label="Cerrar aviso">${ico('x')}</button></div>`).join('');
 }
 $('#notices').onclick = e => { const b = e.target.closest('button'); if (!b) return; const n = notices[+b.dataset.n]; if (!n) return;
   if (b.dataset.a !== undefined) n.actions[+b.dataset.a].fn(); notices.splice(+b.dataset.n, 1); renderNotices(); };
 
 // ---------- pestañas ----------
 function showTab(name) {
+  if (!TABS[name]) name = 'ruta';
   S.tab = name; save();
-  for (const t of ['ruta', 'granja', 'calc', 'datos', 'copias']) $('#tab-' + t).hidden = t !== name;
+  for (const t of Object.keys(TABS)) $('#tab-' + t).hidden = t !== name;
   $$('.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === name));
+  const [title, icon, sub] = TABS[name];
+  $('#pageTitle').textContent = title; $('#pageSub').textContent = sub; $('#pageIcon').innerHTML = `<use href="#i-${icon}"/>`;
   render();
 }
 $('.tabs').onclick = e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); };
+function renderTop() {
+  const rate = RR.farmTotals(S.farm).perHour;
+  $('#topKpi').innerHTML = `<span class="badge" title="Producción teórica de la granja de esta ruta">${ico('trend')}${money(rate)}/h</span>
+    <button class="badge" id="kpiReady" hidden title="Ir a la granja"></button>`;
+}
+$('#topKpi').onclick = e => { if (e.target.closest('#kpiReady')) showTab('granja'); };
+
+// ---------- selector visual de elementos del catálogo ----------
+let pickCb = null, pickCat = '', pickExclude = [], pickNone = false;
+function openPicker(cb, { exclude = [], none = false, title = 'Elegir elemento del juego' } = {}) {
+  pickCb = cb; pickExclude = exclude; pickNone = none; pickCat = '';
+  $('#pickT').textContent = title; $('#pickQ').value = '';
+  renderPicker(); $('#picker').showModal(); $('#pickQ').focus();
+}
+function pickMatches() {
+  const q = $('#pickQ').value.trim().toLowerCase();
+  return Object.values(CAT.items).filter(it => !pickExclude.includes(it.id) && (!pickCat || it.cat === pickCat)
+    && (!q || (it.name + ' ' + it.cat + ' ' + (it.notes || '')).toLowerCase().includes(q)));
+}
+function renderPicker() {
+  const cats = [...new Set(Object.values(CAT.items).map(it => it.cat))];
+  $('#pickCats').innerHTML = [['', 'Todo'], ...cats.map(c => [c, c])].map(([k, n]) => `<button class="chip filter" data-pcat="${esc(k)}" aria-pressed="${pickCat === k}">${k ? ico(IC?.cats[k]?.icon || 'task') : ''}${esc(n)}</button>`).join('');
+  const list = pickMatches();
+  $('#pickList').innerHTML = (pickNone ? `<button data-pick="">${tile('x', 'empty')}<span><b>Ninguno</b><small>Quitar el elemento del paso</small></span></button>` : '')
+    + list.map(it => `<button data-pick="${esc(it.id)}">${itemIcon(it.id)}<span><b>${esc(it.name)}</b><small>${esc(it.cat)}${it.research ? ' · inv. ' + money(it.research) : ''}${it.buy ? ' · ' + money(it.buy) : ''}${(it.tier || 1) > 1 ? ' · T' + it.tier : ''}</small></span></button>`).join('')
+    + (list.length ? '' : '<div class="empty">Nada coincide con la búsqueda.</div>');
+}
+$('#pickQ').oninput = renderPicker;
+$('#pickQ').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('#pickList [data-pick]:not([data-pick=""])')?.click(); } };
+$('#pickClose').onclick = () => $('#picker').close();
+$('#picker').onclick = e => {
+  if (e.target === $('#picker')) return $('#picker').close(); // clic fuera
+  const c = e.target.closest('[data-pcat]'); if (c) { pickCat = c.dataset.pcat; return renderPicker(); }
+  const b = e.target.closest('[data-pick]'); if (!b) return;
+  const cb = pickCb; $('#picker').close(); cb?.(b.dataset.pick);
+};
 
 // ---------- RUTA ----------
 function stepHTML(s, n, ctx) {
@@ -296,90 +668,121 @@ function stepHTML(s, n, ctx) {
   const pct = s.target > 0 ? Math.min(100, s.progress / s.target * 100) : 0;
   const errs = mine.some(i => i.level === 'error');
   const others = ctx.list.filter(x => x.id !== s.id && !s.requires.includes(x.id));
-  return `<div class="step st-${st} ${ctx.next === s ? 'next' : ''} ${errs ? 'has-err' : ''}" data-id="${esc(s.id)}" id="step-${esc(s.id)}">
-    <div class="row">
+  const open = st === 'done' && ctx.openSteps.has(s.id);
+  return `<article class="step st-${st} ${ctx.next === s ? 'next' : ''} ${errs ? 'has-err' : ''} ${open ? 'open' : ''}" data-id="${esc(s.id)}" id="step-${esc(s.id)}">
+    <div class="step-h">
       <input type="checkbox" data-f="done" ${RR.isComplete(st) ? 'checked' : ''} ${s.type === 'Plantas' ? 'disabled title="Se completa solo según la pestaña Granja"' : 'title="Marcar como hecho"'} aria-label="Hecho">
-      <b>#${n}</b> <span class="badge b-${st}">${STATUS[st]}</span>
-      <select data-f="type" aria-label="Tipo">${RR.TYPES.map(t => `<option ${t === s.type ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>
-      <select data-f="phase" aria-label="Fase">${RR.PHASES.map(p => `<option ${p === s.phase ? 'selected' : ''}>${p}</option>`).join('')}</select>
-      <input class="grow" data-f="text" value="${esc(s.text)}" placeholder="Qué hacer" maxlength="300" aria-label="Qué hacer">
-      <span class="tools"><button data-act="up" title="Subir" aria-label="Subir">↑</button><button data-act="down" title="Bajar" aria-label="Bajar">↓</button>
-        <button data-act="dup" title="Duplicar paso" aria-label="Duplicar">⧉</button><button data-act="del" title="Borrar paso" aria-label="Borrar">✕</button></span>
+      <span class="num">#${n}</span>
+      <span class="badge b-${st}">${ico('st_' + st)}${STATUS[st]}</span>
+      <input class="title" data-f="text" value="${esc(s.text)}" placeholder="Qué hacer" maxlength="300" aria-label="Qué hacer">
+      <span class="tools">${st === 'done' ? `<button data-act="toggle" title="${open ? 'Ocultar detalles' : 'Ver detalles'}" aria-label="Detalles">${ico(open ? 'up' : 'down')}</button>` : ''}
+        <button data-act="up" title="Subir" aria-label="Subir">${ico('up')}</button><button data-act="down" title="Bajar" aria-label="Bajar">${ico('down')}</button>
+        <button data-act="dup" title="Duplicar paso" aria-label="Duplicar">${ico('copy')}</button><button data-act="del" title="Borrar paso" aria-label="Borrar">${ico('trash')}</button></span>
     </div>
-    ${s.type === 'Plantas' ? plantRow(s, ctx) : `<div class="row" style="margin-top:6px">
-      <label>Meta <input type="number" min="0" data-f="target" value="${s.target || ''}" placeholder="opcional"></label>
-      <label>Llevo <input type="number" min="0" data-f="progress" value="${s.progress || ''}"></label>
-      ${s.target > 0 ? `<div class="bar"><i style="width:${pct}%"></i></div><small>${fmt(s.progress)} / ${fmt(s.target)}${ctx.rate > 0 && s.progress < s.target ? ` · ~${hrs((s.target - s.progress) / ctx.rate)} con tu granja` : ''}</small>` : ''}
-    </div>`}
-    <div class="row" style="margin-top:6px">
-      <label>Elemento del juego <input data-f="item" list="catItems" value="${esc(it ? it.name : s.item)}" placeholder="opcional: elige del catálogo" style="min-width:220px"></label>
-      ${it ? `<small>${it.research ? 'investigación ' + money(it.research) + ' · ' : ''}${it.buy ? 'compra ' + money(it.buy) + ' · ' : ''}tier ${it.tier || 1}</small> ${confBadge(it.conf)}
-        ${s.type !== 'Plantas' && s.target !== (it.research || 0) + (it.buy || 0) ? `<button data-act="usePrice" title="Pone la meta a investigación + compra">Meta = ${money((it.research || 0) + (it.buy || 0))}</button>` : ''}
-        ${!s.subs.length ? `<button data-act="useSubs">Subtareas sugeridas</button>` : ''}` : ''}
-      <label style="margin-left:8px">Depende de</label>
-      ${s.requires.map(id => { const r = ctx.list.find(x => x.id === id); return r ? `<span class="chip">#${ctx.list.indexOf(r) + 1} ${esc((r.text || '').slice(0, 40))} <button data-unreq="${esc(id)}" aria-label="Quitar dependencia">✕</button></span>` : ''; }).join('')}
-      ${others.length ? `<select data-f="addreq" aria-label="Añadir dependencia"><option value="">+ paso…</option>${others.map(x => `<option value="${esc(x.id)}">#${ctx.list.indexOf(x) + 1} ${esc((x.text || '(sin texto)').slice(0, 60))}</option>`).join('')}</select>` : ''}
+    <div class="step-b">
+      <div class="row">
+        <span class="sel-i" title="Tipo de paso">${ico(IC?.types[s.type] || 'task')}<select data-f="type" aria-label="Tipo">${RR.TYPES.map(t => `<option ${t === s.type ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></span>
+        <span class="sel-i" title="Fase">${ico(IC?.phases[s.phase] || 'flag')}<select data-f="phase" aria-label="Fase">${RR.PHASES.map(p => `<option ${p === s.phase ? 'selected' : ''}>${p}</option>`).join('')}</select></span>
+      </div>
+      ${s.type === 'Plantas' ? plantRow(s, ctx) : `<div class="row">
+        <label class="inl">Meta <input type="number" min="0" data-f="target" value="${s.target || ''}" placeholder="opcional"></label>
+        <label class="inl">Llevo <input type="number" min="0" data-f="progress" value="${s.progress || ''}"></label>
+        ${s.target > 0 ? `<div class="bar acc"><i style="width:${pct}%"></i></div><small>${fmt(s.progress)} / ${fmt(s.target)}${ctx.rate > 0 && s.progress < s.target ? ` · ~${hrs((s.target - s.progress) / ctx.rate)} con tu granja` : ''}</small>` : ''}
+      </div>`}
+      <div class="row">
+        ${it ? itemIcon(s.item) : tile('crate', 'empty', 'Sin elemento del juego')}
+        <input data-f="item" list="catItems" value="${esc(it ? it.name : s.item)}" placeholder="Elemento del juego (opcional)" aria-label="Elemento del juego" class="grow" style="max-width:20rem">
+        <button data-act="pick" class="icon" title="Elegir del catálogo con iconos" aria-label="Elegir del catálogo">${ico('search')}</button>
+        ${it ? `<small>${it.research ? 'investigación ' + money(it.research) + ' · ' : ''}${it.buy ? 'compra ' + money(it.buy) + ' · ' : ''}tier ${it.tier || 1}</small> ${confBadge(it.conf)}
+          ${s.type !== 'Plantas' && s.target !== (it.research || 0) + (it.buy || 0) ? `<button data-act="usePrice" title="Pone la meta a investigación + compra">${ico('coin')}Meta = ${money((it.research || 0) + (it.buy || 0))}</button>` : ''}
+          ${!s.subs.length ? `<button data-act="useSubs">${ico('list')}Subtareas sugeridas</button>` : ''}` : ''}
+      </div>
+      <div class="row deps">${ico('link')}<small>Depende de</small>
+        ${s.requires.map(id => { const r = ctx.list.find(x => x.id === id); return r ? `<span class="chip">${ico('st_' + ctx.st.get(r.id))}<span>#${ctx.list.indexOf(r) + 1} ${esc((r.text || '').slice(0, 40))}</span><button data-unreq="${esc(id)}" aria-label="Quitar dependencia">${ico('x')}</button></span>` : ''; }).join('')}
+        ${others.length ? `<select data-f="addreq" aria-label="Añadir dependencia" style="max-width:16rem"><option value="">+ paso…</option>${others.map(x => `<option value="${esc(x.id)}">#${ctx.list.indexOf(x) + 1} ${esc((x.text || '(sin texto)').slice(0, 60))}</option>`).join('')}</select>` : ''}
+      </div>
+      ${mine.map(i => issueHTML(i)).join('')}
+      <textarea data-f="notes" placeholder="Notas: dónde farmear, requisitos, precio..." maxlength="5000" aria-label="Notas" rows="1">${esc(s.notes)}</textarea>
+      ${subsHTML(s, ctx.next === s, st)}
     </div>
-    ${mine.map(issueHTML).join('')}
-    <textarea data-f="notes" placeholder="Notas: dónde farmear, requisitos, precio..." maxlength="5000" aria-label="Notas">${esc(s.notes)}</textarea>
-    ${subsHTML(s, ctx.next === s, st)}
-  </div>`;
+  </article>`;
 }
 function plantRow(s, ctx) {
   const qn = RR.QUAL[s.q].toLowerCase(), any = RR.plantCount(S.farm, 'g'), have = RR.plantCount(S.farm, s.q), st = ctx.st.get(s.id);
   const msg = st === 'done' ? `✔ ${have}/${s.target} de calidad ${qn} o mejor`
     : st === 'prov' ? `Vale de momento con calidad inferior · reemplaza ${s.target - have} por ${qn} o mejor cuando puedas`
     : `${s.down ? any : have}/${s.target} plantas${s.down ? ` (${have} ${qn}+)` : ` ${qn}+`} · faltan ${Math.max(0, s.target - (s.down ? any : have))}`;
-  return `<div class="row" style="margin-top:6px">
-    <label>Calidad mín. <select data-f="q">${Object.entries(RR.QUAL).map(([k, n]) => `<option value="${k}" ${k === s.q ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
-    <label>Cantidad <input type="number" min="0" step="1" data-f="target" value="${s.target || ''}"></label>
-    <label><input type="checkbox" data-f="down" ${s.down ? 'checked' : ''}> Acepta calidad inferior</label>
+  return `<div class="row">
+    <label class="inl"><i class="dot q-${s.q}"></i>Calidad mín. <select data-f="q">${Object.entries(RR.QUAL).map(([k, n]) => `<option value="${k}" ${k === s.q ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+    <label class="inl">Cantidad <input type="number" min="0" step="1" data-f="target" value="${s.target || ''}" class="w-s"></label>
+    <label class="inl"><input type="checkbox" data-f="down" ${s.down ? 'checked' : ''}> Acepta calidad inferior</label>
+    ${s.target > 0 ? `<div class="bar sm"><i style="width:${Math.min(100, (s.down ? any : have) / s.target * 100)}%"></i></div>` : ''}
     <small class="${st === 'prov' ? 'l-warn' : ''}">${msg}</small>
   </div>`;
 }
 function subsHTML(s, isNext, st) {
   const done = s.subs.filter(x => x.done).length, first = s.subs.find(x => !x.done);
   return `<details class="subs" ${st === 'done' ? '' : 'open'}>
-    <summary>Subtareas (${done}/${s.subs.length})</summary>
+    <summary>${ico('chevron', 'chev')}${ico('list')}Subtareas (${done}/${s.subs.length})${s.subs.length ? `<span class="bar sm" style="max-width:5rem"><i style="width:${done / s.subs.length * 100}%"></i></span>` : ''}</summary>
     ${s.subs.map(x => `<div class="row sub ${x.done ? 'sdone' : ''} ${isNext && x === first ? 'snext' : ''}" data-sid="${esc(x.id)}">
       <input type="checkbox" data-sf="done" ${x.done ? 'checked' : ''} aria-label="Subtarea hecha">
       <input class="grow" data-sf="text" value="${esc(x.text)}" placeholder="Subtarea" maxlength="300" aria-label="Subtarea">
-      <button data-sact="del" title="Borrar subtarea" aria-label="Borrar subtarea">✕</button>
+      <button data-sact="del" title="Borrar subtarea" aria-label="Borrar subtarea">${ico('x')}</button>
     </div>`).join('')}
-    <button data-act="addsub">+ Subtarea</button>
+    <button data-act="addsub" class="ghost">${ico('plus')}Subtarea</button>
   </details>`;
 }
 const FIXLABEL = { moveBefore: 'Mover antes', dropRequire: 'Quitar esa dependencia', clearItem: 'Quitar referencia', addReq: 'Añadir paso antes', have: 'Ya lo tengo' };
 function issueHTML(i, idx) {
   const fixes = i.fix ? [i.fix].concat(i.fix.kind === 'addReq' ? [{ kind: 'have', item: i.fix.item }] : []) : [];
-  return `<div class="issue l-${i.level}"><span class="ico">${i.level === 'error' ? '✖' : i.level === 'warn' ? '!' : 'i'}</span><span class="msg">${esc(i.msg)}</span>
+  return `<div class="issue l-${i.level}">${ico(LVL[i.level] || 'info')}<span class="msg">${esc(i.msg)}</span>
     ${fixes.map(f => `<button data-fix='${esc(JSON.stringify(f))}'>${FIXLABEL[f.kind]}</button>`).join('')}
-    ${i.stepId && idx !== undefined ? `<button data-goto="${esc(i.stepId)}">Ir</button>` : ''}</div>`;
+    ${i.stepId && idx !== undefined ? `<button data-goto="${esc(i.stepId)}" class="ghost" title="Ir al paso">Ir</button>` : ''}</div>`;
 }
+function nextHTML(next, st, list) {
+  if (!next) return '';
+  const sub = next.subs.find(x => !x.done), s = st.get(next.id);
+  return `<div class="card next-card">
+    <div class="card-h">${ico('flag')}<h3>Siguiente paso</h3><button data-goto="${esc(next.id)}" class="ghost" title="Ir al paso">${ico('goto')}Ir</button></div>
+    <div class="row" style="flex-wrap:nowrap">${next.item ? itemIcon(next.item) : tile(IC?.types[next.type] || 'task', 'k-acc')}
+      <span class="title">#${list.indexOf(next) + 1} ${esc(next.text || '(sin texto)')}</span></div>
+    ${s === 'blocked' ? `<div class="issue l-warn">${ico('st_blocked')}<span class="msg">Bloqueado: revisa sus dependencias.</span></div>` : ''}
+    ${sub ? `<label class="quick mt"><input type="checkbox" data-nextsub="${esc(sub.id)}"> <span class="grow">${esc(sub.text || '(subtarea sin texto)')}</span><small>${next.subs.filter(x => x.done).length}/${next.subs.length}</small></label>` : ''}
+    ${next.type !== 'Plantas' && !sub ? `<button class="primary mt" data-nextdone style="width:100%">${ico('check')}Marcar como hecho</button>` : ''}
+  </div>`;
+}
+const openSteps = new Set(); // pasos completados desplegados (solo en esta pantalla)
 
 function renderRoute() {
   const r = route(), list = RR.ordered(r), st = RR.statuses(r, S.farm), issues = RR.validateRoute(r, S.farm);
   const next = RR.nextStep(r, S.farm), sum = RR.routeSummary(r, S.farm), rate = sum.rate;
-  const ctx = { st, issues, next, list, rate };
+  const ctx = { st, issues, next, list, rate, openSteps };
   $('#routes').innerHTML = S.routes.map(x => `<option value="${esc(x.id)}" ${x.id === r.id ? 'selected' : ''}>${x.draft ? '✎ ' : ''}${esc(x.name)}${x.draft ? ' (borrador)' : ''}</option>`).join('');
   if (document.activeElement !== $('#name')) $('#name').value = r.name;
   if (document.activeElement !== $('#goal')) $('#goal').value = r.goal;
-  $('#haveChips').innerHTML = r.have.map(id => `<span class="chip">${esc(itemName(id))} <button data-unhave="${esc(id)}" aria-label="Quitar">✕</button></span>`).join('');
+  $('#haveChips').innerHTML = r.have.map(id => `<span class="chip">${itemIcon(id, 'sm')}<span>${esc(itemName(id))}</span><button data-unhave="${esc(id)}" aria-label="Quitar">${ico('x')}</button></span>`).join('');
   const errs = RR.errorsOf(issues);
-  $('#draftBar').innerHTML = r.draft ? `<div class="notice n-warn" style="margin-top:8px"><div class="row"><span class="grow">Borrador: puedes guardarlo con errores, pero no activarlo${errs.length ? ` mientras tenga ${errs.length} error(es)` : ''}.</span>
-    <button id="activate" ${errs.length ? `disabled title="Corrige antes: ${esc(errs[0].msg)}"` : ''}>Activar ruta</button></div></div>` : '';
-  const done = sum.counts.done + sum.counts.prov, nextSub = next?.subs.find(x => !x.done);
-  $('#total').style.width = (list.length ? done / list.length * 100 : 0) + '%';
+  $('#draftBar').innerHTML = r.draft ? `<div class="notice n-warn mt">${ico('edit')}<span class="grow">Borrador: puedes guardarlo con errores, pero no activarlo${errs.length ? ` mientras tenga ${errs.length} error(es)` : ''}.</span>
+    <button id="activate" ${errs.length ? `disabled title="Corrige antes: ${esc(errs[0].msg)}"` : ''}>Activar ruta</button></div>` : '';
+  const done = sum.counts.done + sum.counts.prov, nextSub = next?.subs.find(x => !x.done), pct = list.length ? done / list.length * 100 : 0;
+  $('#total').style.width = pct + '%';
+  $('#ring').style.setProperty('--p', pct.toFixed(1)); $('#ringTxt').textContent = Math.round(pct) + '%';
   $('#totalTxt').textContent = `${done}/${list.length} pasos · ` + (next ? `Siguiente: ${next.text || '(sin texto)'}${nextSub ? ' › ' + nextSub.text : ''}${st.get(next.id) === 'blocked' ? ' (bloqueado: revisa sus dependencias)' : ''}` : list.length ? '¡Meta cumplida!' : 'Ruta vacía');
-  $('#routeStats').innerHTML = [`<span>Pendiente de gastar/ahorrar <b>${money(sum.total)}</b></span>`,
-    `<span>Ritmo de tu granja <b>${money(rate)}/h</b></span>`, `<span>Tiempo estimado <b>${hrs(sum.etaHours)}</b></span>`,
-    sum.counts.blocked ? `<span class="badge b-blocked">${sum.counts.blocked} bloqueado(s)</span>` : '', sum.counts.prov ? `<span class="badge b-prov">${sum.counts.prov} provisional(es)</span>` : ''].join('');
+  const kpi = (icon, label, val, cls = '') => `<div class="kpi ${cls}">${ico(icon)}<span><small>${label}</small><b>${val}</b></span></div>`;
+  $('#routeStats').innerHTML = [kpi('coin', 'Pendiente', money(sum.total)), kpi('trend', 'Ritmo granja', money(rate) + '/h'), kpi('hourglass', 'Tiempo estimado', hrs(sum.etaHours)),
+    sum.counts.blocked ? kpi('st_blocked', 'Bloqueados', sum.counts.blocked, 'warn') : '', sum.counts.prov ? kpi('st_prov', 'Provisionales', sum.counts.prov, 'warn') : ''].join('');
+  $('#nextCard').innerHTML = nextHTML(next, st, list);
   const order = { error: 0, warn: 1, info: 2 };
   const shown = issues.filter(i => i.level !== 'info' || !i.stepId).sort((a, b) => order[a.level] - order[b.level]);
-  $('#issues').innerHTML = shown.length ? `<div class="card"><h3>Revisión de la ruta: ${errs.length} error(es), ${issues.filter(i => i.level === 'warn').length} advertencia(s)</h3>${shown.map((i, k) => issueHTML(i, k)).join('')}</div>` : '';
-  $('#phases').innerHTML = RR.PHASES.map(ph => `<h2>${ph} game</h2>` +
-    (list.filter(s => s.phase === ph).map(s => stepHTML(s, list.indexOf(s) + 1, ctx)).join('') || `<div class="empty">Sin pasos en ${ph}.</div>`) +
-    `<button data-add="${ph}">+ Añadir paso</button>`).join('');
+  const nw = issues.filter(i => i.level === 'warn').length;
+  $('#issues').innerHTML = shown.length ? `<div class="card"><div class="card-h">${ico(errs.length ? 'error' : nw ? 'warn' : 'info')}<h3>Revisión de la ruta</h3><span class="badge ${errs.length ? 'c-pendiente' : ''}">${errs.length} error(es)</span><span class="badge ${nw ? 'c-estimado' : ''}">${nw} aviso(s)</span></div>${shown.map((i, k) => issueHTML(i, k)).join('')}</div>`
+    : `<div class="card"><div class="card-h" style="margin:0">${ico('check')}<h3>Ruta sin errores ni avisos</h3></div></div>`;
+  $('#phases').innerHTML = RR.PHASES.map(ph => {
+    const steps = list.filter(s => s.phase === ph), d = steps.filter(s => RR.isComplete(st.get(s.id))).length;
+    return `<section class="phase"><header class="phase-h">${tile(IC?.phases[ph] || 'flag', 'k-acc')}<h2>${ph} game</h2><span class="count">${d}/${steps.length}</span>
+      ${steps.length ? `<div class="bar sm"><i style="width:${d / steps.length * 100}%"></i></div>` : ''}<button data-add="${ph}">${ico('plus')}Añadir paso</button></header>
+      <div class="steps">${steps.map(s => stepHTML(s, list.indexOf(s) + 1, ctx)).join('') || `<div class="empty">Sin pasos en ${ph}.</div>`}</div></section>`;
+  }).join('');
 }
 
 const stepId = el => el.closest('.step')?.dataset.id;
@@ -412,6 +815,9 @@ $('#phases').addEventListener('click', e => {
   if (b.dataset.unreq) return commit(st => RR.ops.setStep(st, id, 'requires', route(st).steps.find(x => x.id === id).requires.filter(x => x !== b.dataset.unreq)));
   if (b.dataset.sact === 'del') { const sid = b.closest('.sub').dataset.sid; return commit(st => RR.ops.delSub(st, id, sid), { ok: 'Subtarea borrada.' }); }
   const a = b.dataset.act;
+  if (a === 'toggle') { openSteps.has(id) ? openSteps.delete(id) : openSteps.add(id); return render(); }
+  if (a === 'pick') { const s = route().steps.find(x => x.id === id);
+    return openPicker(v => commit(st => RR.ops.setStep(st, id, 'item', v)), { none: !!s.item, title: `Elemento para «${(s.text || 'este paso').slice(0, 50)}»` }); }
   if (a === 'addsub') return commit(st => RR.ops.addSub(st, id));
   if (a === 'up' || a === 'down') return commit(st => RR.ops.moveStep(st, id, a === 'up' ? -1 : 1));
   if (a === 'dup') return commit(st => RR.ops.duplicateStep(st, id), { ok: 'Paso duplicado.' });
@@ -423,24 +829,35 @@ $('#phases').addEventListener('click', e => {
     if (confirm(msg)) commit(st => RR.ops.deleteStep(st, id), { ok: 'Paso borrado.' });
   }
 });
+// accesos rápidos del panel «Siguiente paso»
+$('#nextCard').addEventListener('change', e => {
+  const sid = e.target.dataset.nextsub, n = RR.nextStep(route(), S.farm); if (!sid || !n) return;
+  commit(st => RR.ops.setSub(st, n.id, sid, 'done', true), { ok: 'Subtarea hecha.' });
+});
+$('#nextCard').addEventListener('click', e => {
+  if (!e.target.closest('[data-nextdone]')) return; const n = RR.nextStep(route(), S.farm); if (!n) return;
+  commit(st => RR.ops.setStep(st, n.id, 'done', true), { ok: `«${n.text || 'Paso'}» completado.` });
+});
 // arreglos sugeridos e «Ir» (en el panel y en cada paso)
 document.addEventListener('click', e => {
   const b = e.target.closest('button[data-fix],button[data-goto]'); if (!b) return;
-  if (b.dataset.goto) { const el = $(`#step-${CSS.escape(b.dataset.goto)}`); el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); el?.querySelector('input,select')?.focus(); return; }
+  if (b.dataset.goto) { const el = $(`#step-${CSS.escape(b.dataset.goto)}`); el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); el?.querySelector('input,select')?.focus({ preventScroll: true }); return; }
   const fix = JSON.parse(b.dataset.fix);
   commit(st => RR.ops.applyFix(st, fix), { allowErrors: route().draft, ok: 'Arreglo aplicado.' });
 });
 $('#routes').onchange = e => commit(st => RR.ops.setCur(st, e.target.value), { allowErrors: true });
 $('#name').onchange = e => commit(st => RR.ops.setRoute(st, 'name', e.target.value));
 $('#goal').onchange = e => commit(st => RR.ops.setRoute(st, 'goal', e.target.value));
+const addHave = id => commit(st => RR.ops.setRoute(st, 'have', [...route(st).have, id]));
 $('#haveIn').onchange = e => {
   const v = e.target.value.trim(), it = Object.values(CAT.items).find(x => x.name.toLowerCase() === v.toLowerCase());
   e.target.value = ''; if (!v) return;
   if (!it) return toast(`«${v}» no está en el catálogo.`, 'error');
-  commit(st => RR.ops.setRoute(st, 'have', [...route(st).have, it.id]));
+  addHave(it.id);
 };
+$('#havePick').onclick = () => openPicker(addHave, { exclude: route().have, title: 'Ya tengo…' });
 $('#haveChips').onclick = e => { const b = e.target.closest('[data-unhave]'); if (b) commit(st => RR.ops.setRoute(st, 'have', route(st).have.filter(x => x !== b.dataset.unhave))); };
-$('#draftBar').onclick = e => { if (e.target.id === 'activate') commit(st => RR.ops.setRoute(st, 'draft', false), { ok: 'Ruta activada.' }); };
+$('#draftBar').onclick = e => { if (e.target.closest('#activate')) commit(st => RR.ops.setRoute(st, 'draft', false), { ok: 'Ruta activada.' }); };
 $('#newRoute').onclick = () => { const name = prompt('Nombre de la ruta'); if (name?.trim()) commit(st => RR.ops.newRoute(st, name), { allowErrors: true, ok: 'Ruta creada.' }); };
 $('#dupRoute').onclick = () => commit(st => RR.ops.duplicateRoute(st, st.cur), { allowErrors: true, ok: 'Ruta duplicada.' });
 $('#newWipe').onclick = () => commit(st => RR.ops.newWipe(st), { allowErrors: true, ok: 'Ruta copiada para el nuevo wipe, con el progreso a cero.' });
@@ -478,47 +895,41 @@ function restoreFull(data, reason = 'Antes de restaurar una copia') {
 }
 
 // ---------- GRANJA ----------
-const num = (t, k, label, w = 110, step = 'any') => `<label>${label} <input type="number" min="0" step="${step}" data-t="${k}" value="${t[k]}" style="width:${w}px"></label>`;
+const num = (t, k, label, cls = 'w-m', step = 'any') => `<label>${label} <input type="number" min="0" step="${step}" data-t="${k}" value="${t[k]}" class="${cls}"></label>`;
 function stationBody(t) {
   const max = CAT.limits.bushes_per_table.value;
   if (t.kind === 'plant') { const used = t.g + t.p + t.o;
-    return Object.entries(RR.QUAL).map(([k, n]) => `<label>${n} <input type="number" min="0" max="${max}" step="1" data-t="${k}" value="${t[k]}" style="width:70px"></label>`).join('')
-      + `<small>${used}/${max} plantas</small>`; }
+    return Object.entries(RR.QUAL).map(([k, n]) => `<label title="Plantas de calidad ${n.toLowerCase()}"><i class="dot q-${k}"></i>${n} <input type="number" min="0" max="${max}" step="1" data-t="${k}" value="${t[k]}" class="w-s"></label>`).join('')
+      + `<div class="bar sm" title="${used}/${max} plantas" style="max-width:6rem"><i style="width:${Math.min(100, used / max * 100)}%"></i></div><small>${used}/${max} plantas</small>`; }
   if (t.kind === 'repack')
-    return `<label>Tool Box <select data-t="box"><option value="">Ninguna</option>${RR.KINDS.repack.slotUpg.map(k => `<option value="${k}" ${t.box === k ? 'selected' : ''}>${esc(itemName(k))} (+${CAT.items[k].effect.slots} en cola)</option>`).join('')}</select></label>`
-      + num(t, 'base', 'Min por caja', 70) + num(t, 'sell', 'Venta caja (notor. 1)') + num(t, 'cost', 'Coste caja');
-  return `<label>Reactor <select data-t="reactor">${[1, 2, 3].map(r => `<option value="${r}" ${t.reactor === r ? 'selected' : ''}>Tier ${r} (${RR.reactorMin(r)} min)</option>`).join('')}</select></label>`
-    + num(t, 'freeze', 'Min congelador', 70)
-    + `<label>Hard Crystals <select data-t="quality">${Object.entries(RR.CRYSTAL).map(([k, n]) => `<option value="${k}" ${t.quality === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>`
-    + num(t, 'crystals', 'Cristales por lote', 70, 1) + num(t, 'value', 'o valor del lote') + num(t, 'cost', 'Coste reactivos');
+    return `<label>${ico('toolbox')}Tool Box <select data-t="box"><option value="">Ninguna</option>${RR.KINDS.repack.slotUpg.map(k => `<option value="${k}" ${t.box === k ? 'selected' : ''}>${esc(itemName(k))} (+${CAT.items[k].effect.slots} en cola)</option>`).join('')}</select></label>`
+      + num(t, 'base', 'Min por caja', 'w-s') + num(t, 'sell', 'Venta caja (notor. 1)') + num(t, 'cost', 'Coste caja');
+  return `<label>${ico('atom')}Reactor <select data-t="reactor">${[1, 2, 3].map(r => `<option value="${r}" ${t.reactor === r ? 'selected' : ''}>Tier ${r} (${RR.reactorMin(r)} min)</option>`).join('')}</select></label>`
+    + num(t, 'freeze', 'Min congelador', 'w-s')
+    + `<label>${ico('gem')}Hard Crystals <select data-t="quality">${Object.entries(RR.CRYSTAL).map(([k, n]) => `<option value="${k}" ${t.quality === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>`
+    + num(t, 'crystals', 'Cristales por lote', 'w-s', 1) + num(t, 'value', 'o valor del lote') + num(t, 'cost', 'Coste reactivos');
 }
 function tableHTML(t, issues) {
   const c = RR.calc(t, S.farm), K = RR.KINDS[t.kind];
-  return `<div class="step" data-id="${esc(t.id)}">
-    <div class="row">
-      <small>${K.label}</small>
-      <input class="grow" data-t="name" value="${esc(t.name)}" maxlength="120" aria-label="Nombre">
-      ${K.upg.map(k => { const it = CAT.items[k], eff = it?.effect?.speed ?? it?.effect?.freeze ?? 0;
-        return `<label title="${esc(it?.notes || '')}"><input type="checkbox" data-t="${k}" ${t.upg[k] ? 'checked' : ''}> ${esc(it?.name || k)} +${Math.round(eff * 1000) / 10}%${(it?.tier || 1) > 1 ? ` <span class="badge">T${it.tier}</span>` : ''}</label>`; }).join('')}
-      <span class="tools"><button data-tact="del" title="Borrar" aria-label="Borrar estación">✕</button></span>
-    </div>
-    <div class="row" style="margin-top:6px">${stationBody(t)}</div>
-    <div class="row stat" style="margin-top:6px">
-      <span>Ciclo <b>${Math.round(c.cycle)} min</b></span>
-      <span>Por ciclo <b>${c.noData ? 'sin datos' : money(c.harvest)}</b></span>
-      <span>Por hora <b>${c.noData ? '—' : money(c.perHour)}</b></span>
-      ${t.kind === 'repack' && c.slots > 1 ? `<span>Cola de ${c.slots} cajas: aguanta <b>${hrs(c.autonomy / 60)}</b> sin atender</span>` : ''}
-      <span>Inversión <b>${money(RR.investment(t))}</b></span>
-      ${c.real != null ? `<span>Real <b>${money(c.real)}</b>/ciclo (${t.log.length} registros) · <b>${money(c.realPerHour)}/h</b></span>` : ''}
+  const kpi = (icon, label, val) => `<div class="kpi">${ico(icon)}<span><small>${label}</small><b>${val}</b></span></div>`;
+  return `<article class="step station k-${t.kind}" data-id="${esc(t.id)}">
+    <header class="st-h">${tile(IC?.kinds[t.kind] || 'task', 'k-' + t.kind)}
+      <div class="col"><small>${K.label}</small><input data-t="name" value="${esc(t.name)}" maxlength="120" aria-label="Nombre"></div>
+      <span class="tools"><button data-tact="del" title="Borrar estación" aria-label="Borrar estación">${ico('trash')}</button></span></header>
+    <div class="st-timer"><span class="timer" data-timer="${esc(t.id)}"></span><div class="bar"><i data-tbar="${esc(t.id)}" style="width:0"></i></div></div>
+    <div class="row"><button data-tact="start" class="primary grow">${ico('play')}${K.btn}</button><button data-tact="stop">${ico('stop')}Parar</button></div>
+    <div class="upgs">${K.upg.map(k => { const it = CAT.items[k], eff = it?.effect?.speed ?? it?.effect?.freeze ?? 0;
+      return `<label class="upg" title="${esc(it ? itemTip(it) + (it.notes ? ' — ' + it.notes : '') : k)}">${itemIcon(k, 'sm')}<input type="checkbox" data-t="${k}" ${t.upg[k] ? 'checked' : ''}> ${esc(it?.name || k)} <b>+${Math.round(eff * 1000) / 10}%</b>${(it?.tier || 1) > 1 ? ` <span class="badge">T${it.tier}</span>` : ''}</label>`; }).join('')}</div>
+    <div class="row body">${stationBody(t)}</div>
+    <div class="kpis sm">
+      ${kpi('timer', 'Ciclo', Math.round(c.cycle) + ' min')}${kpi('bag', 'Por ciclo', c.noData ? 'sin datos' : money(c.harvest))}
+      ${kpi('trend', 'Por hora', c.noData ? '—' : money(c.perHour))}${kpi('coin', 'Inversión', money(RR.investment(t)))}
+      ${t.kind === 'repack' && c.slots > 1 ? kpi('hourglass', `Cola de ${c.slots} cajas`, hrs(c.autonomy / 60)) : ''}
+      ${c.real != null ? kpi('chart', `Real (${t.log.length} reg.)`, `${money(c.real)} · ${money(c.realPerHour)}/h`) : ''}
     </div>
     ${issues.filter(i => i.stationId === t.id).map(i => issueHTML(i)).join('')}
-    <div class="row" style="margin-top:6px">
-      <button data-tact="start">${K.btn}</button>
-      <button data-tact="stop">Parar</button>
-      <span class="timer" data-timer="${esc(t.id)}"></span>
-      <span class="tools"><input type="number" min="0" placeholder="Venta real $" data-log style="width:120px" aria-label="Venta real de este ciclo"><button data-tact="log" title="Apunta lo que sacaste de verdad para comparar con el teórico">Registrar</button></span>
-    </div>
-  </div>`;
+    <details><summary>Registrar venta real</summary><div class="row mt"><input type="number" min="0" placeholder="Venta real $" data-log class="grow" aria-label="Venta real de este ciclo"><button data-tact="log" title="Apunta lo que sacaste de verdad para comparar con el teórico">${ico('check')}Registrar</button></div></details>
+  </article>`;
 }
 function renderFarm() {
   const F = S.farm, tot = RR.farmTotals(F), issues = RR.validateFarm(F);
@@ -526,9 +937,11 @@ function renderFarm() {
   $('[data-g=notoriety]').innerHTML = [1, 2, 3, 4, 5].map(n => `<option value="${n}">${n} (Fence +${Math.round(RR.notorietyBonus('fence', n) * 100)}%)</option>`).join('');
   $('#baseType').innerHTML = Object.entries(CAT.bases).map(([k, b]) => `<option value="${k}">${esc(b.name)} (${b.workbenches} banco${b.workbenches > 1 ? 's' : ''})</option>`).join('');
   $$('[data-g]').forEach(el => { if (document.activeElement !== el) el.value = F[el.dataset.g]; });
-  $('#tables').innerHTML = F.tables.map(t => tableHTML(t, issues)).join('') || `<div class="empty">No tienes estaciones. Añade una mesa, un banco o un taller arriba.</div>`;
+  $('#tables').innerHTML = F.tables.map(t => tableHTML(t, issues)).join('') || `<div class="empty" style="grid-column:1/-1">No tienes estaciones. Añade una mesa, un banco o un taller arriba.</div>`;
   $('#farmIssues').innerHTML = issues.filter(i => !i.stationId).map(i => issueHTML(i)).join('');
-  $('#farmSum').innerHTML = `<span>${tot.plant} mesas · ${tot.plants} plantas · ${tot.repack} bancos · ${tot.chem} labs</span><span>Total por hora <b>${money(tot.perHour)}</b></span><span>En marcha <b>${money(tot.runningPerHour)}/h</b></span><span>Por día (24 h) <b>${money(tot.perHour * 24)}</b></span>`;
+  const kpi = (icon, label, val) => `<div class="kpi">${ico(icon)}<span><small>${label}</small><b>${val}</b></span></div>`;
+  $('#farmSum').innerHTML = kpi('planter', 'Mesas · plantas', `${tot.plant} · ${tot.plants}`) + kpi('crate', 'Bancos', tot.repack) + kpi('flask', 'Labs', tot.chem)
+    + kpi('trend', 'Total por hora', money(tot.perHour)) + kpi('play', 'En marcha', money(tot.runningPerHour) + '/h') + kpi('coin', 'Por día (24 h)', money(tot.perHour * 24));
   $('#notify').hidden = !!host;
   tick();
 }
@@ -577,22 +990,27 @@ function alertReady(t) {
 }
 const fmtTime = ms => { const s = Math.ceil(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
   return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
+const TIMER_ICO = ico('timer');
 function tick() {
   let ready = 0, changed = false;
   const now = Date.now();
   for (const t of [S.farm, ...Object.values(S.farms)].flatMap(f => f.tables)) { // todas las rutas: la producción sigue aunque cambies de ruta
-    const el = document.querySelector(`[data-timer="${CSS.escape(t.id)}"]`), card = el?.closest('.step');
-    if (!t.start) { if (el) el.textContent = 'Parado'; card?.classList.remove('ready'); continue; }
+    const el = document.querySelector(`[data-timer="${CSS.escape(t.id)}"]`), card = el?.closest('.step'), bar = document.querySelector(`[data-tbar="${CSS.escape(t.id)}"]`);
+    if (!t.start) { if (el) el.innerHTML = TIMER_ICO + 'Parado'; if (bar) bar.style.width = '0'; card?.classList.remove('ready'); continue; }
     const left = t.end - now;
+    if (bar) bar.style.width = (t.end > t.start ? Math.min(100, Math.max(0, (now - t.start) / (t.end - t.start) * 100)) : 100) + '%';
     if (left <= 0) {
-      ready++; if (el) el.textContent = '¡LISTO!'; card?.classList.add('ready');
+      ready++; if (el) el.innerHTML = ico('check') + '¡LISTO!'; card?.classList.add('ready');
       if (!t.notified) { t.notified = true; changed = true; alertReady(t); }
-    } else { if (el) el.textContent = 'Listo en ' + fmtTime(left); card?.classList.remove('ready'); }
+    } else { if (el) el.innerHTML = TIMER_ICO + 'Listo en ' + fmtTime(left); card?.classList.remove('ready'); }
   }
   if (changed) save();
   const msg = JSON.stringify(RR.timerList(S));
   if (host && msg !== lastSent) { lastSent = msg; host.postMessage({ timers: JSON.parse(msg) }); }
   document.title = ready ? `(${ready}) Producción lista · Rob Run` : 'Rob Run · Ruta de escalado';
+  const kr = $('#kpiReady'), nr = $('#navReady');
+  if (kr) { kr.hidden = !ready; kr.className = 'badge ready'; kr.innerHTML = ico('check') + `${ready} lista${ready > 1 ? 's' : ''}`; }
+  nr.hidden = !ready; nr.textContent = ready;
 }
 setInterval(tick, 1000);
 
@@ -603,27 +1021,30 @@ function renderCalc() {
   const realH = F.tables.reduce((a, t) => a + (RR.calc(t, F).realPerHour ?? 0), 0), withReal = F.tables.filter(t => t.log.length).length;
   const opts = F.tables.flatMap(t => RR.upgradeOptions(t, F).map(o => ({ ...o, station: t.name }))).sort((a, b) => (a.payback ?? 1e9) - (b.payback ?? 1e9));
   const cmp = RR.stationComparison(F), simC = RR.calc(sim, F), simInv = RR.investment(sim);
+  const maxGain = Math.max(1, ...opts.map(o => o.gain)), maxCmp = Math.max(1, ...cmp.map(c => c.noData ? 0 : c.perHour));
+  const kpi = (icon, label, val, cls = '') => `<div class="kpi ${cls}">${ico(icon)}<span><small>${label}</small><b>${val}</b></span></div>`;
   $('#calcBody').innerHTML = `
-  <div class="card"><h3>Resumen</h3><div class="row stat">
-    <span>Teórico <b>${money(tot.perHour)}/h</b></span><span>En marcha <b>${money(tot.runningPerHour)}/h</b></span>
-    <span>Real registrado <b>${withReal ? money(realH) + '/h' : '—'}</b> <small>(${withReal} estación(es) con ventas apuntadas)</small></span>
-    <span>Ruta: falta <b>${money(sum.total)}</b> · <b>${hrs(sum.etaHours)}</b> a este ritmo</span></div></div>
-  <div class="card"><h3>Cuellos de botella y recomendaciones</h3>${RR.bottlenecks(r, F).map(m => `<div class="issue l-info"><span class="ico">i</span><span class="msg">${esc(m)}</span></div>`).join('') || '<div class="empty">Nada que destacar.</div>'}</div>
-  <div class="card"><h3>¿Cuánto tardo en juntar…?</h3><div class="row"><label>Cantidad $ <input type="number" min="0" id="goalAmt" value="1000000"></label><span id="goalOut" class="stat"></span></div></div>
-  <div class="card"><h3>Mejoras: cuál compra primero</h3>${opts.length ? `<div class="scroll"><table><tr><th>Mejora</th><th>Estación</th><th>Tier</th><th class="n">+ $/h</th><th class="n">Compra</th><th class="n">Se paga en</th><th>Dato</th></tr>
-    ${opts.map(o => `<tr><td>${esc(o.name)}${o.locked ? ' <span class="badge" title="Tu laptop no llega a ese tier">bloqueada</span>' : ''}</td><td>${esc(o.station)}</td><td>${o.tier}</td><td class="n">${money(o.gain)}</td><td class="n">${money(o.cost)}</td><td class="n">${hrs(o.payback)}</td><td>${confBadge(o.conf)}</td></tr>`).join('')}</table></div>
+  <div class="card span"><div class="card-h">${ico('chart')}<h3>Resumen</h3></div><div class="kpis">
+    ${kpi('trend', 'Teórico', money(tot.perHour) + '/h')}${kpi('play', 'En marcha', money(tot.runningPerHour) + '/h')}
+    ${kpi('chart', `Real registrado (${withReal} estación/es)`, withReal ? money(realH) + '/h' : '—')}
+    ${kpi('coin', 'Ruta: falta', money(sum.total))}${kpi('hourglass', 'A este ritmo', hrs(sum.etaHours))}</div></div>
+  <div class="card"><div class="card-h">${ico('warn')}<h3>Cuellos de botella y recomendaciones</h3></div>${RR.bottlenecks(r, F).map(m => `<div class="issue l-info">${ico('info')}<span class="msg">${esc(m)}</span></div>`).join('') || '<div class="empty">Nada que destacar.</div>'}</div>
+  <div class="card"><div class="card-h">${ico('hourglass')}<h3>¿Cuánto tardo en juntar…?</h3></div><div class="row"><label class="inl">Cantidad $ <input type="number" min="0" id="goalAmt" value="1000000"></label></div><div id="goalOut" class="kpis mt"></div></div>
+  <div class="card span"><div class="card-h">${ico('upgrade')}<h3>Mejoras: cuál compra primero</h3></div>${opts.length ? `<div class="scroll"><table><tr><th>Mejora</th><th>Estación</th><th>Tier</th><th class="n">+ $/h</th><th class="n">Compra</th><th class="n">Se paga en</th><th>Dato</th></tr>
+    ${opts.map(o => `<tr><td class="name">${itemIcon(o.key, 'sm')}<span>${esc(o.name)}${o.locked ? ' <span class="badge" title="Tu laptop no llega a ese tier">' + ico('st_blocked') + 'bloqueada</span>' : ''}</span></td><td>${esc(o.station)}</td><td>${o.tier}</td>
+      <td class="n">${money(o.gain)}<div class="mini"><i style="width:${Math.max(0, o.gain / maxGain * 100)}%"></i></div></td><td class="n">${money(o.cost)}</td><td class="n">${hrs(o.payback)}</td><td>${confBadge(o.conf)}</td></tr>`).join('')}</table></div>
     <small>La investigación se paga una vez por wipe y no entra en «se paga en».</small>` : '<div class="empty">Añade estaciones en la Granja para ver qué mejora compensa.</div>'}</div>
-  <div class="card"><h3>Comparador de estaciones (valores por defecto, notoriedad ${F.notoriety})</h3><div class="scroll"><table><tr><th>Estación</th><th class="n">$/h</th><th class="n">Compra</th><th class="n">Se paga en</th></tr>
-    ${cmp.map(c => `<tr><td>${esc(c.label)}</td><td class="n">${c.noData ? 'sin datos' : money(c.perHour)}</td><td class="n">${money(c.investment)}</td><td class="n">${c.noData ? '—' : hrs(c.payback)}</td></tr>`).join('')}</table></div>
+  <div class="card"><div class="card-h">${ico('chart')}<h3>Comparador de estaciones</h3><small>notoriedad ${F.notoriety}</small></div><div class="scroll"><table><tr><th>Estación</th><th class="n">$/h</th><th class="n">Compra</th><th class="n">Se paga en</th></tr>
+    ${cmp.map(c => `<tr><td class="name">${tile(IC?.kinds[c.kind] || 'task', 'sm k-' + c.kind)}<span>${esc(c.label)}</span></td><td class="n">${c.noData ? 'sin datos' : money(c.perHour)}<div class="mini"><i style="width:${c.noData ? 0 : c.perHour / maxCmp * 100}%"></i></div></td><td class="n">${money(c.investment)}</td><td class="n">${c.noData ? '—' : hrs(c.payback)}</td></tr>`).join('')}</table></div>
     <small>Mesa con 6 verdes; banco sin mejoras; el laboratorio necesita que apuntes cristales por lote (no hay datos públicos).</small></div>
-  <div class="card"><h3>Simulador (no se guarda)</h3>
-    <div class="row"><label>Estación <select id="simKind">${Object.entries(RR.KINDS).map(([k, K]) => `<option value="${k}" ${sim.kind === k ? 'selected' : ''}>${K.label}</option>`).join('')}</select></label></div>
-    <div class="step" data-sim style="margin-top:8px">
-      <div class="row">${RR.KINDS[sim.kind].upg.map(k => `<label><input type="checkbox" data-t="${k}" ${sim.upg[k] ? 'checked' : ''}> ${esc(itemName(k))}</label>`).join('')}</div>
-      <div class="row" style="margin-top:6px">${stationBody(sim)}</div></div>
-    <div class="row stat"><span>Ciclo <b>${Math.round(simC.cycle)} min</b></span><span>Por hora <b>${simC.noData ? '—' : money(simC.perHour)}</b></span>
-      <span>Compra <b>${money(simInv)}</b></span><span>Se paga en <b>${simC.perHour > 0 ? hrs(simInv / simC.perHour) : '—'}</b></span></div></div>`;
-  const out = () => { const v = +$('#goalAmt').value || 0; $('#goalOut').innerHTML = tot.perHour > 0 ? `<span>Teórico <b>${hrs(v / tot.perHour)}</b></span>${realH > 0 ? `<span>Real <b>${hrs(v / realH)}</b></span>` : ''}` : '<small>Sin producción en la granja.</small>'; };
+  <div class="card"><div class="card-h">${ico('sliders')}<h3>Simulador</h3><small>no se guarda</small></div>
+    <div class="row"><label class="inl">Estación <select id="simKind">${Object.entries(RR.KINDS).map(([k, K]) => `<option value="${k}" ${sim.kind === k ? 'selected' : ''}>${K.label}</option>`).join('')}</select></label></div>
+    <div class="step station k-${sim.kind}" data-sim style="margin-top:.75rem">
+      <div class="upgs">${RR.KINDS[sim.kind].upg.map(k => `<label class="upg">${itemIcon(k, 'sm')}<input type="checkbox" data-t="${k}" ${sim.upg[k] ? 'checked' : ''}> ${esc(itemName(k))}</label>`).join('')}</div>
+      <div class="row body">${stationBody(sim)}</div></div>
+    <div class="kpis mt">${kpi('timer', 'Ciclo', Math.round(simC.cycle) + ' min')}${kpi('trend', 'Por hora', simC.noData ? '—' : money(simC.perHour))}
+      ${kpi('coin', 'Compra', money(simInv))}${kpi('hourglass', 'Se paga en', simC.perHour > 0 ? hrs(simInv / simC.perHour) : '—')}</div></div>`;
+  const out = () => { const v = +$('#goalAmt').value || 0; $('#goalOut').innerHTML = tot.perHour > 0 ? kpi('trend', 'Teórico', hrs(v / tot.perHour)) + (realH > 0 ? kpi('chart', 'Real', hrs(v / realH)) : '') : '<small>Sin producción en la granja.</small>'; };
   $('#goalAmt').oninput = out; out();
 }
 $('#tab-calc').addEventListener('change', e => {
@@ -636,37 +1057,41 @@ $('#tab-calc').addEventListener('change', e => {
 });
 
 // ---------- DATOS DEL JUEGO ----------
-let datosFilter = '';
+let datosFilter = '', datosCat = '';
 function srcLinks(list) { return (list || []).map(k => { const s = CAT.SOURCES[k]; return s?.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer" title="${esc(s.date)}">${esc(new URL(s.url).hostname.replace('www.', ''))}</a>` : esc(s?.note || k); }).join(', '); }
 function renderDatos() {
-  const q = datosFilter.toLowerCase(), items = Object.values(CAT.items).filter(it => !q || (it.name + it.cat + (it.notes || '')).toLowerCase().includes(q));
-  $('#datosBody').innerHTML = `<div class="card"><div class="row"><span class="grow">Catálogo <b>${esc(CAT.version)}</b> · juego ${esc(CAT.game)} · verificado ${esc(CAT.verified)}</span>
-    <input id="datosQ" placeholder="Filtrar…" value="${esc(datosFilter)}" aria-label="Filtrar catálogo"></div>
-    <small>Kefir no publica precios: son datos de wikis de fans. «confirmado» = 2+ fuentes coinciden; «una fuente»; «discrepancia» = no coinciden (se muestra la alternativa); «comprobado» = visto por ti en el juego.</small></div>
-  <div class="card scroll"><table><tr><th>Elemento</th><th>Tipo</th><th class="n">Investigación</th><th class="n">Compra</th><th>Tier</th><th>Requiere</th><th>Dato</th><th>Fuentes / notas</th></tr>
-    ${items.map(it => `<tr><td>${esc(it.name)}</td><td>${esc(it.cat)}</td><td class="n">${it.research ? money(it.research) : '—'}</td><td class="n">${it.buy ? money(it.buy) : '—'}</td><td>${it.tier || 1}</td>
+  const q = datosFilter.toLowerCase(), items = Object.values(CAT.items).filter(it => (!datosCat || it.cat === datosCat) && (!q || (it.name + it.cat + (it.notes || '')).toLowerCase().includes(q)));
+  const cats = [...new Set(Object.values(CAT.items).map(it => it.cat))];
+  $('#datosBody').innerHTML = `<div class="card"><div class="row"><span class="grow">${ico('book')} Catálogo <b>${esc(CAT.version)}</b> · juego ${esc(CAT.game)} · verificado ${esc(CAT.verified)}</span>
+    <label class="search" style="flex:1 1 14rem;max-width:24rem">${ico('search')}<input id="datosQ" placeholder="Filtrar…" value="${esc(datosFilter)}" aria-label="Filtrar catálogo"></label></div>
+    <div class="chips mt">${[['', 'Todo'], ...cats.map(c => [c, c])].map(([k, n]) => `<button class="chip filter" data-dcat="${esc(k)}" aria-pressed="${datosCat === k}">${k ? ico(IC?.cats[k]?.icon || 'task') : ''}${esc(n)}</button>`).join('')}</div>
+    <p><small>Kefir no publica precios: son datos de wikis de fans. «confirmado» = 2+ fuentes coinciden; «una fuente»; «discrepancia» = no coinciden (se muestra la alternativa); «comprobado» = visto por ti en el juego. Los iconos son propios de esta app, no del juego.</small></p></div>
+  <div class="card mt"><div class="tbl-wrap"><table><tr><th>Elemento</th><th>Tipo</th><th class="n">Investigación</th><th class="n">Compra</th><th>Tier</th><th>Requiere</th><th>Dato</th><th>Fuentes / notas</th></tr>
+    ${items.map(it => `<tr><td class="name">${itemIcon(it.id, 'sm')}<span>${esc(it.name)}</span></td><td>${esc(it.cat)}</td><td class="n">${it.research ? money(it.research) : '—'}</td><td class="n">${it.buy ? money(it.buy) : '—'}</td><td>${it.tier || 1}</td>
       <td>${(it.requires || []).map(itemName).map(esc).join(', ')}${it.tier > 1 ? `${it.requires?.length ? ', ' : ''}parcela nivel ${it.tier}` : ''}</td><td>${confBadge(it.conf)}</td>
-      <td><small>${esc(it.notes || '')}${it.alt ? ' · Alternativa: ' + esc(it.alt) : ''}</small><br>${srcLinks(it.src)}</td></tr>`).join('')}</table></div>
-  <div class="card scroll"><h3>Valores de producción por defecto</h3><table><tr><th>Dato</th><th class="n">Valor</th><th>Confianza</th><th>Fuentes / notas</th></tr>
+      <td><small>${esc(it.notes || '')}${it.alt ? ' · Alternativa: ' + esc(it.alt) : ''}</small><br>${srcLinks(it.src)}</td></tr>`).join('')}</table>
+    ${items.length ? '' : '<div class="empty">Nada coincide con el filtro.</div>'}</div></div>
+  <div class="card mt"><div class="card-h">${ico('sliders')}<h3>Valores de producción por defecto</h3></div><div class="scroll"><table><tr><th>Dato</th><th class="n">Valor</th><th>Confianza</th><th>Fuentes / notas</th></tr>
     ${Object.entries(CAT.defaults).map(([k, d]) => `<tr><td>${esc(k)}</td><td class="n">${fmt(d.value)}</td><td>${confBadge(d.conf)}</td><td><small>${esc(d.notes || '')}${d.alt ? ' · Alternativa: ' + esc(d.alt) : ''}</small><br>${srcLinks(d.src)}</td></tr>`).join('')}
-    ${Object.entries(CAT.notoriety).map(([k, d]) => `<tr><td>Notoriedad · ${esc(k)}</td><td class="n">${d.values.map(v => '+' + Math.round(v * 100) + '%').join(' / ')}</td><td>${confBadge(d.conf)}</td><td><small>${esc(d.notes || '')}</small><br>${srcLinks(d.src)}</td></tr>`).join('')}
-    ${Object.entries(CAT.limits).map(([k, d]) => `<tr><td>Límite · ${esc(k)}</td><td class="n">${fmt(d.value)}</td><td>${confBadge(d.conf)}</td><td><small>${esc(d.notes || '')}</small><br>${srcLinks(d.src)}</td></tr>`).join('')}
-  </table></div>`;
+    ${Object.entries(CAT.notoriety).map(([k, d]) => `<tr><td>${ico('star')} Notoriedad · ${esc(k)}</td><td class="n">${d.values.map(v => '+' + Math.round(v * 100) + '%').join(' / ')}</td><td>${confBadge(d.conf)}</td><td><small>${esc(d.notes || '')}</small><br>${srcLinks(d.src)}</td></tr>`).join('')}
+    ${Object.entries(CAT.limits).map(([k, d]) => `<tr><td>${ico('st_blocked')} Límite · ${esc(k)}</td><td class="n">${fmt(d.value)}</td><td>${confBadge(d.conf)}</td><td><small>${esc(d.notes || '')}</small><br>${srcLinks(d.src)}</td></tr>`).join('')}
+  </table></div></div>`;
   const inp = $('#datosQ'); inp.oninput = () => { datosFilter = inp.value; renderDatos(); const i = $('#datosQ'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); };
 }
+$('#tab-datos').addEventListener('click', e => { const c = e.target.closest('[data-dcat]'); if (c) { datosCat = c.dataset.dcat; renderDatos(); } });
 
 // ---------- COPIAS ----------
 function renderCopias() {
   const list = backups();
-  $('#copiasBody').innerHTML = `<div class="card"><h3>Copia completa</h3>
+  $('#copiasBody').innerHTML = `<div class="card"><div class="card-h">${ico('download')}<h3>Copia completa</h3></div>
     <p><small>Guarda todas tus rutas, la granja y los temporizadores en un archivo. Para pasar tus datos a otro equipo o navegador, o antes de tocar algo importante.</small></p>
-    <div class="row"><button id="exportAll">Descargar copia completa</button><button id="restoreFile">Restaurar desde archivo…</button><input id="restoreIn" type="file" accept=".json,application/json" hidden></div></div>
-  <div class="card"><h3>Copias automáticas en este equipo</h3>
-    ${list.length ? `<table><tr><th>Fecha</th><th>Motivo</th><th></th></tr>${list.map((b, i) => `<tr><td>${new Date(b.at).toLocaleString('es')}</td><td>${esc(b.reason)}</td>
-      <td><button data-bk="${i}" data-op="restore">Restaurar</button> <button data-bk="${i}" data-op="dl">Descargar</button></td></tr>`).join('')}</table>`
-    : '<div class="empty">Aún no hay copias. Se crean solas una vez al día, antes de actualizar el formato y antes de restaurar.</div>'}</div>
-  <div class="card"><h3>Actualizaciones</h3><p><small>Versión v${esc(RR.APP_VERSION)}. La app mira sola cada 6 h si hay una versión nueva en GitHub. Actualizar no borra tus rutas ni tu granja.</small></p><button id="checkUpd">Buscar actualizaciones</button></div>
-  <div class="card"><h3>Empezar de cero</h3><p><small>Borra rutas, granja y temporizadores de este equipo (se guarda una copia antes).</small></p><button id="resetAll">Borrar todos mis datos…</button></div>`;
+    <div class="row"><button id="exportAll" class="primary">${ico('download')}Descargar copia completa</button><button id="restoreFile">${ico('upload')}Restaurar desde archivo…</button><input id="restoreIn" type="file" accept=".json,application/json" hidden></div></div>
+  <div class="card"><div class="card-h">${ico('refresh')}<h3>Actualizaciones</h3><span class="badge">v${esc(RR.APP_VERSION)}</span></div><p><small>La app mira sola cada 6 h si hay una versión nueva en GitHub. Actualizar no borra tus rutas ni tu granja.</small></p><button id="checkUpd">${ico('refresh')}Buscar actualizaciones</button></div>
+  <div class="card"><div class="card-h">${ico('warn')}<h3>Empezar de cero</h3></div><p><small>Borra rutas, granja y temporizadores de este equipo (se guarda una copia antes).</small></p><button id="resetAll" class="danger">${ico('trash')}Borrar todos mis datos…</button></div>
+  <div class="card span"><div class="card-h">${ico('db')}<h3>Copias automáticas en este equipo</h3><span class="badge">${list.length}/6</span></div>
+    ${list.length ? `<div class="scroll"><table><tr><th>Fecha</th><th>Motivo</th><th></th></tr>${list.map((b, i) => `<tr><td>${new Date(b.at).toLocaleString('es')}</td><td>${esc(b.reason)}</td>
+      <td class="n"><button data-bk="${i}" data-op="restore">${ico('undo')}Restaurar</button> <button data-bk="${i}" data-op="dl" class="ghost">${ico('download')}Descargar</button></td></tr>`).join('')}</table></div>`
+    : '<div class="empty">Aún no hay copias. Se crean solas una vez al día, antes de actualizar el formato y antes de restaurar.</div>'}</div>`;
 }
 $('#tab-copias').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
@@ -691,6 +1116,7 @@ $('#tab-copias').addEventListener('change', async e => {
 function render() {
   $('#undo').disabled = !undoStack.length; $('#redo').disabled = !redoStack.length;
   $('#catItems').innerHTML ||= Object.values(CAT.items).map(it => `<option value="${esc(it.name)}">${esc(it.cat)}</option>`).join('');
+  renderTop();
   const tab = S.tab;
   if (tab === 'ruta') renderRoute(); else if (tab === 'granja') renderFarm(); else if (tab === 'calc') renderCalc(); else if (tab === 'datos') renderDatos(); else renderCopias();
   if (tab !== 'granja') tick();

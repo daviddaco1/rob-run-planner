@@ -16,7 +16,7 @@ dotnet publish app -c Release -o app\out; if ($LASTEXITCODE) { throw 'Falló la 
 $stage = Join-Path $root 'release\RobRunPlanner'
 Remove-Item (Join-Path $root 'release') -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force "$stage\rutas", "$stage\schema" | Out-Null
-Copy-Item app\out\RobRunPlanner.exe, ruta-escalado.html, catalogo.js, core.js, rutas-incluidas.js, README.md, COMO-CREAR-RUTAS.md, DATOS.md, CHANGELOG.md $stage
+Copy-Item app\out\RobRunPlanner.exe, ruta-escalado.html, catalogo.js, core.js, iconos.js, rutas-incluidas.js, README.md, COMO-CREAR-RUTAS.md, DATOS.md, CHANGELOG.md $stage
 Copy-Item ruta-*.json "$stage\rutas"
 Copy-Item schema\ruta.schema.json "$stage\schema"
 try { Copy-Item app\out\RobRunPlanner.exe $root -Force } catch { Write-Warning 'No se pudo copiar el .exe a la raíz (¿está abierto?)' }  # .exe local para pruebas, ignorado por git

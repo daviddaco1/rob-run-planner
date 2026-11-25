@@ -340,3 +340,15 @@ test('temporizadores: lista para la app nativa', () => {
   const F = RR.normFarm({ tables: [{ id: 't', kind: 'repack', name: 'B', start: 1000, end: 61000 }, { id: 'u' }] });
   assert.deepEqual(RR.timerList(F), [{ id: 't', due: 61000, text: 'B: cajas reempaquetadas listas' }]);
 });
+
+test('iconos: cada elemento del catálogo, tipo de paso, estación y fase tiene un icono que existe', () => {
+  require('../iconos.js');
+  const IC = globalThis.RR_ICONS, CAT = globalThis.RR_CATALOG;
+  const has = n => typeof IC.paths[n] === 'string' && IC.paths[n].length > 0;
+  for (const it of Object.values(CAT.items)) assert.ok(has(IC.items[it.id] || IC.cats[it.cat]?.icon), `sin icono: ${it.id}`);
+  for (const t of RR.TYPES) assert.ok(has(IC.types[t]), `tipo sin icono: ${t}`);
+  for (const k of Object.keys(RR.KINDS)) assert.ok(has(IC.kinds[k]), `estación sin icono: ${k}`);
+  for (const p of RR.PHASES) assert.ok(has(IC.phases[p]), `fase sin icono: ${p}`);
+  for (const k of Object.keys(IC.items)) assert.ok(CAT.items[k], `icono para un elemento que ya no existe: ${k}`);
+  assert.match(IC.sprite(), /<symbol id="i-money" viewBox="0 0 24 24">/);
+});

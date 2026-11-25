@@ -12,6 +12,8 @@ Herramienta externa y **manual** para planificar tu progreso en ROB RUN (Kefir):
 
 También funciona sin instalar nada: abre `ruta-escalado.html` en cualquier navegador.
 
+La interfaz se adapta a cualquier tamaño de ventana, desde una ventana pequeña junto al juego hasta 4K. Los iconos están dibujados para este proyecto; no son los del juego.
+
 ## Rutas incluidas
 
 - **Full farmeo: 2 granjas completas** (`ruta-2-granjas.json`)

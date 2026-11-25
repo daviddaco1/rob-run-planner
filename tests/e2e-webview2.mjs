@@ -11,7 +11,7 @@ import { connect, sleep } from './cdp.mjs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 if (!existsSync(join(root, 'RobRunPlanner.exe'))) { console.log('SKIP: falta RobRunPlanner.exe'); process.exit(0); }
 const dir = mkdtempSync(join(tmpdir(), 'rr-wv2-'));
-for (const f of ['RobRunPlanner.exe', 'ruta-escalado.html', 'core.js', 'catalogo.js', 'rutas-incluidas.js']) copyFileSync(join(root, f), join(dir, f));
+for (const f of ['RobRunPlanner.exe', 'ruta-escalado.html', 'core.js', 'catalogo.js', 'iconos.js', 'rutas-incluidas.js']) copyFileSync(join(root, f), join(dir, f));
 const log = join(dir, 'avisos.log'), port = 9242;
 const proc = spawn(join(dir, 'RobRunPlanner.exe'), [], { env: { ...process.env, ROBRUN_DATA_DIR: join(dir, 'data'), ROBRUN_TEST_LOG: log,
   WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port}` }, stdio: 'ignore' });

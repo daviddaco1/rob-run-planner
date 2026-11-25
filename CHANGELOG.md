@@ -1,5 +1,18 @@
 # Cambios
 
+## 2.3.0 · 2026-11-24
+
+**Nuevo diseño, iconos y mejor uso de la pantalla.** Tus datos no cambian de formato.
+
+- **Iconos propios** para dinero, plantas y calidades, títulos, bases, estaciones, mejoras, química, defensa, tipos de paso, fases, estados, temporizadores y estadísticas. Cada elemento del catálogo tiene el suyo, con color por categoría y borde por rareza. No son los del juego: Kefir no permite redistribuirlos (detalle en DATOS.md).
+- **Navegación:** barra lateral con iconos (plegable) en pantallas anchas y barra superior en ventanas pequeñas. Cabecera con el ritmo de la granja y un aviso de «N listas» que lleva a la Granja.
+- **Se adapta a la ventana:** de 375 px a 4K y ultrawide. En pantallas grandes, la Ruta muestra los pasos en 2–3 columnas con un panel lateral fijo (ruta, progreso, siguiente paso y revisión); la Granja enseña más estaciones a la vez. El texto escala con la ventana y con el escalado de Windows.
+- **Ruta:** fases con progreso, pasos con icono de estado y tipo, dependencias con su estado, pasos completados plegados, y panel «Siguiente paso» para marcar la siguiente subtarea o el paso sin buscarlo.
+- **Selector visual del catálogo** con buscador, filtros por categoría e iconos, para «Elemento del juego» y «Ya tengo». El autocompletado de siempre sigue funcionando.
+- **Granja:** tarjetas por estación con temporizador grande y barra de progreso del ciclo, mejoras como fichas con icono, y resumen en indicadores.
+- **Calculadoras y Datos:** indicadores, barras comparativas de $/h, iconos en las tablas y filtro por categoría en el catálogo.
+- Avisos, errores y advertencias con icono; animaciones suaves que se desactivan si Windows pide reducir movimiento.
+
 ## 2.2.0 · 2026-11-24
 
 - **Cada ruta tiene su propia granja.** Al cambiar de ruta (en Ruta o con el nuevo selector de la pestaña Granja) cambian las estaciones, la notoriedad y el tipo de base. La granja que tenías pasa a la ruta activa; las demás empiezan vacías. Los temporizadores de todas las rutas siguen avisando.

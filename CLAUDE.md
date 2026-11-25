@@ -14,7 +14,7 @@ UI text and docs are in Spanish.
 
 ## Layout and architecture
 
-The app has no build step, no runtime dependencies and no backend. It runs from `file://`, from any browser, and inside the WebView2 wrapper. The page loads three classic scripts in order (no ES modules, because `file://` blocks them):
+The app has no build step, no runtime dependencies and no backend. It runs from `file://`, from any browser, and inside the WebView2 wrapper. The page loads four classic scripts in order (no ES modules, because `file://` blocks them):
 
 1. **`catalogo.js`** → `globalThis.RR_CATALOG`. This is the single source of game data:
    - `items`: research/buy cost, `tier`, `requires`, `effect: {speed|freeze|slots}`, `unique`;
@@ -34,9 +34,13 @@ The app has no build step, no runtime dependencies and no backend. It runs from 
    - **Import and export:** `parseImport` (never throws; routes with errors come back as `draft`) and `exportRoute`.
    - **Bundled routes:** `syncIncluded`/`addIncludedVersion`, keyed by stable `id` + `version`; a newer version is added as a separate route, never overwriting.
    - **`checkInvariants(S)`:** used by tests and on load.
-3. **`rutas-incluidas.js`** → `window.RUTAS`, generated from `ruta-2-granjas.json` (see Commands).
+3. **`iconos.js`** → `globalThis.RR_ICONS`: our own SVG icons (not the game's; see DATOS.md › Iconos). `items` maps catalog id → icon, `cats` gives the fallback icon + colour class per category, plus `types`/`kinds`/`phases`. The page injects `sprite()` once and uses `<use href="#i-name">`. It must keep working if this file is missing. A test checks every catalog item has an icon.
+4. **`rutas-incluidas.js`** → `window.RUTAS`, generated from `ruta-2-granjas.json` (see Commands).
 
 **`ruta-escalado.html`** is UI only.
+- **Design system:** CSS tokens on `:root` (colours, spacing, radii, rarity/category colours), fluid root font size (`clamp`, follows window width and DPI), reusable classes (`.card`, `.kpi(s)`, `.tile`, `.badge`, `.chip`, `.issue`, `.bar`). Breakpoints: <1024 nav on top, ≥1024 icon rail + side panel (`.split` with sticky `.panel`), ≥1360 sidebar with labels (collapsible, stored in `localStorage['robrun-ui']`, a per-screen pref, not user data). Step lists use container queries (1/2/3 columns).
+- **Item picker:** `<dialog id="picker">`, `openPicker(cb, opts)`; the datalist inputs stay as the keyboard path (tests use them).
+- E2E selectors to keep: `.step` on step and station cards, `[data-f]`, `[data-act]`, `[data-tact]`, `[data-add]`, `[data-addst]`, `[data-g]`, `#issues`, `#notices`, `#tables [data-timer]`. Buttons matched by exact `textContent` (e.g. «Ya lo tengo») must not get extra text; icons are `<svg>` without text.
 - **Every change goes through `commit(fn, opt)`.** It clones `S`, runs `fn` (which calls `RR.ops.*`), then `normState`, then validates. It rejects the change atomically if the change adds a *new* route error to a non-draft route (unless `opt.allowErrors`) or a new farm error (always), and offers "save as draft". Otherwise it pushes the undo stack (60 entries), saves and renders.
 - **Never mutate `S` outside `commit`.** The one exception is `tick()` setting `t.notified`.
 - **Storage:**
@@ -46,7 +50,7 @@ The app has no build step, no runtime dependencies and no backend. It runs from 
 - Rendering is full re-render per tab with `esc()` on every interpolated string; keep it that way (XSS: imported routes are untrusted).
 
 **`app/`** is the native Windows wrapper (.NET 10 WinForms + WebView2, `Program.cs` only).
-- It maps the exe's folder to `https://robrun.app/`. That folder must contain `ruta-escalado.html`, `catalogo.js`, `core.js` and `rutas-incluidas.js`.
+- It maps the exe's folder to `https://robrun.app/`. That folder must contain `ruta-escalado.html`, `catalogo.js`, `core.js`, `iconos.js` and `rutas-incluidas.js`.
 - **Data location:** WebView2 data defaults to `%LOCALAPPDATA%\RobRunPlanner`; `ROBRUN_DATA_DIR` overrides it.
 - **Alerts:** the page posts `{timers:[{id,due,text}]}` (from `RR.timerList`) whenever its timer list changes. The host checks them every second, even when minimized, and alerts with a tray balloon, a generated chime (or `aviso.wav` next to the exe) and a taskbar flash. `ROBRUN_TEST_LOG` appends each alert to a file.
 - **External links:** links outside `robrun.app` open in the system browser.

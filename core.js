@@ -4,7 +4,7 @@
 (function (G) {
   'use strict';
   const SCHEMA = 3;
-  const APP_VERSION = '2.2.0';
+  const APP_VERSION = '2.3.0';
   const REPO = 'daviddaco1/rob-run-planner'; // actualizaciones: releases de este repo de GitHub
   // ¿La etiqueta de release (p. ej. "v2.1.3") es más nueva que la versión instalada?
   function isNewer(tag, cur = APP_VERSION) {
