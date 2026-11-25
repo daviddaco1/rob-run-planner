@@ -1,7 +1,7 @@
 // Ventana nativa (WebView2) que muestra ruta-escalado.html desde la carpeta del .exe.
 // No toca el juego: solo es una ventana con la herramienta manual.
 // Avisos: la página manda sus temporizadores ({timers:[{id,due,text}]}) y la app avisa con Windows
-// aunque la ventana esté minimizada (la página puede ir más lenta en segundo plano).
+// aunque la ventana esté minimizada o cerrada a la bandeja (la página puede ir más lenta en segundo plano).
 // Actualizaciones: la página avisa si hay una release más nueva en GitHub; si pulsas «Actualizar», la app descarga
 // RobRunPlanner.zip de ESE repo (nunca de otra URL), se cierra, copia los archivos encima y se vuelve a abrir.
 // Tus datos están en %LOCALAPPDATA%\RobRunPlanner y no se tocan.
@@ -114,9 +114,27 @@ del "{zip}"
 
         // Icono en la bandeja: muestra los avisos y doble clic abre la ventana
         var tray = new NotifyIcon { Icon = form.Icon ?? SystemIcons.Application, Text = "Rob Run Planner", Visible = true };
-        tray.DoubleClick += (_, _) => { form.Show(); form.WindowState = FormWindowState.Normal; form.Activate(); };
-        tray.BalloonTipClicked += (_, _) => { form.Show(); form.WindowState = FormWindowState.Normal; form.Activate(); };
+        void ShowWindow() { form.Show(); if (form.WindowState == FormWindowState.Minimized) form.WindowState = FormWindowState.Normal; form.Activate(); }
+        tray.DoubleClick += (_, _) => ShowWindow();
+        tray.BalloonTipClicked += (_, _) => ShowWindow();
         form.FormClosed += (_, _) => tray.Dispose();
+
+        // Cerrar con la X la esconde en la bandeja: la app sigue avisando de los temporizadores.
+        // Para salir de verdad: menú del icono de la bandeja › Salir (o al apagar Windows / al actualizar).
+        var exiting = false;
+        void Exit() { exiting = true; form.Close(); }
+        var menu = new ContextMenuStrip();
+        menu.Items.Add("Abrir Rob Run Planner", null, (_, _) => ShowWindow());
+        menu.Items.Add("Salir", null, (_, _) => Exit());
+        tray.ContextMenuStrip = menu;
+        var hintShown = false;
+        form.FormClosing += (_, e) =>
+        {
+            if (exiting || e.CloseReason != CloseReason.UserClosing) return;
+            e.Cancel = true;
+            form.Hide();
+            if (!hintShown) { hintShown = true; tray.ShowBalloonTip(5000, "Rob Run Planner sigue abierto", "Está en la bandeja y te seguirá avisando. Para salir: clic derecho en el icono › Salir.", ToolTipIcon.Info); }
+        };
 
         var timers = new List<(string id, long due, string text)>();
         var notified = new HashSet<string>(); // id|due ya avisados en esta sesión
@@ -156,7 +174,7 @@ del "{zip}"
                     {
                         string? err;
                         try { err = await PrepareUpdate(); } catch (Exception ex) { err = "no se pudo descargar (" + ex.Message + ")."; }
-                        if (err is null) form.Close(); // el script instala y vuelve a abrir la app
+                        if (err is null) Exit(); // el script instala y vuelve a abrir la app
                         else core.PostWebMessageAsJson(JsonSerializer.Serialize(new { updateError = err }));
                         return;
                     }

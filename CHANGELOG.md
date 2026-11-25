@@ -1,5 +1,9 @@
 # Cambios
 
+## 2.3.1 · 2026-11-25
+
+- **Cerrar ya no sale de la app.** La X de la ventana la esconde en la bandeja (junto al reloj) y sigue avisando de tus temporizadores. Para volver, doble clic en el icono. Para salir de verdad: clic derecho en el icono › **Salir**. Minimizar sigue funcionando como siempre.
+
 ## 2.3.0 · 2026-11-24
 
 **Nuevo diseño, iconos y mejor uso de la pantalla.** Tus datos no cambian de formato.

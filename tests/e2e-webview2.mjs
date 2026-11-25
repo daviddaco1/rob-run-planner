@@ -1,6 +1,6 @@
 // E2E de la app nativa (WebView2) con carpeta de datos y copia de archivos temporales: no toca tus datos ni tu instalación.
 // Requiere RobRunPlanner.exe compilado en la raíz. Ejecutar: node tests/e2e-webview2.mjs
-import { spawn } from 'node:child_process';
+import { spawn, execSync } from 'node:child_process';
 import { mkdtempSync, rmSync, existsSync, copyFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
@@ -40,6 +40,17 @@ try {
   await step('localStorage persiste en la carpeta de datos indicada', async () => {
     await ev('location.reload(); true'); await sleep(2500);
     assert.ok(await ev(`RRApp.S.farm.tables.some(t => t.name === 'PRUEBA')`));
+  });
+  await step('cerrar con la X la deja en la bandeja: sigue viva y avisando', async () => {
+    const ps = cmd => execSync(`powershell -NoProfile -c "${cmd}"`, { encoding: 'utf8' }).trim();
+    // WM_SYSCOMMAND + SC_CLOSE = pulsar la X (un WM_CLOSE a secas es «finalizar tarea» y sí cierra)
+    ps(`Add-Type -Name W -Namespace U -MemberDefinition '[DllImport(\\"user32.dll\\")] public static extern bool PostMessage(IntPtr h, uint m, IntPtr w, IntPtr l);'; [U.W]::PostMessage((Get-Process -Id ${proc.pid}).MainWindowHandle, 0x0112, [IntPtr]0xF060, [IntPtr]0) | Out-Null`);
+    await sleep(2000);
+    assert.equal(proc.exitCode, null, 'la app se cerró');
+    assert.equal(ps(`(Get-Process -Id ${proc.pid}).MainWindowHandle`), '0', 'la ventana sigue visible'); // oculta
+    await ev(`RRApp.commit(st => { const t = RR.ops.addStation(st, 'chem'); t.name = 'OCULTA'; RR.ops.setStation(st, t.id, 'freeze', 0); RR.ops.startStation(st, t.id, Date.now() - 3600e3); }, { allowErrors: true }); true`);
+    await sleep(3000);
+    assert.match(readFileSync(log, 'utf8'), /OCULTA: lote listo/);
   });
   await step('sin errores de JavaScript', async () => assert.deepEqual(c.errors, []));
   c.close();

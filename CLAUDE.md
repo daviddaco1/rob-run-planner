@@ -53,6 +53,7 @@ The app has no build step, no runtime dependencies and no backend. It runs from 
 - It maps the exe's folder to `https://robrun.app/`. That folder must contain `ruta-escalado.html`, `catalogo.js`, `core.js`, `iconos.js` and `rutas-incluidas.js`.
 - **Data location:** WebView2 data defaults to `%LOCALAPPDATA%\RobRunPlanner`; `ROBRUN_DATA_DIR` overrides it.
 - **Alerts:** the page posts `{timers:[{id,due,text}]}` (from `RR.timerList`) whenever its timer list changes. The host checks them every second, even when minimized, and alerts with a tray balloon, a generated chime (or `aviso.wav` next to the exe) and a taskbar flash. `ROBRUN_TEST_LOG` appends each alert to a file.
+- **Close = tray:** the X (`CloseReason.UserClosing`) only hides the window; the app keeps alerting. It really exits via tray menu › Salir, the updater (`Exit()`), Windows shutdown or a plain `WM_CLOSE` (Task Manager / `CloseMainWindow`). The WebView2 E2E simulates the X with `WM_SYSCOMMAND SC_CLOSE`.
 - **External links:** links outside `robrun.app` open in the system browser.
 - `make-icon.ps1` draws `icon.ico`.
 
