@@ -1,6 +1,6 @@
 {
   "name": "rob-run-planner",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "private": true,
   "description": "Planificador externo y manual para ROB RUN (sin dependencias). Solo scripts de pruebas.",
   "scripts": {

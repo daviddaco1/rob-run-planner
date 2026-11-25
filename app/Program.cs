@@ -72,18 +72,19 @@ static class Program
     {
         using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
         http.DefaultRequestHeaders.UserAgent.ParseAdd("RobRunPlanner-updater");
-        using var doc = JsonDocument.Parse(await http.GetStringAsync($"https://api.github.com/repos/{Repo}/releases/latest"));
-        var url = doc.RootElement.GetProperty("assets").EnumerateArray()
-            .Where(a => a.GetProperty("name").GetString() == "RobRunPlanner.zip")
-            .Select(a => a.GetProperty("browser_download_url").GetString()).FirstOrDefault();
-        if (url is null || !url.StartsWith($"https://github.com/{Repo}/releases/download/", StringComparison.Ordinal))
-            return "la versión nueva no incluye RobRunPlanner.zip.";
+        // Enlace fijo de GitHub al zip de la última release de ESTE repo (no usa la API, que limita a 60 consultas/hora por IP)
+        var url = $"https://github.com/{Repo}/releases/latest/download/RobRunPlanner.zip";
         var dir = AppContext.BaseDirectory.TrimEnd('\\');
         try { var probe = Path.Combine(dir, ".robrun-write-test"); File.WriteAllText(probe, ""); File.Delete(probe); }
         catch { return $"no se puede escribir en {dir}. Mueve la carpeta de la app a otro sitio o descarga la versión a mano."; }
         var tmp = Path.Combine(Path.GetTempPath(), "RobRunPlanner-update-" + Guid.NewGuid().ToString("N")[..8]);
         var zip = tmp + ".zip";
-        await File.WriteAllBytesAsync(zip, await http.GetByteArrayAsync(url));
+        using (var res = await http.GetAsync(url))
+        {
+            if (res.StatusCode == System.Net.HttpStatusCode.NotFound) return "la versión nueva no incluye RobRunPlanner.zip.";
+            res.EnsureSuccessStatusCode();
+            await File.WriteAllBytesAsync(zip, await res.Content.ReadAsByteArrayAsync());
+        }
         ZipFile.ExtractToDirectory(zip, tmp); // lanza excepción si alguna entrada intenta salir de la carpeta
         if (!File.Exists(Path.Combine(tmp, "RobRunPlanner.exe")) || !File.Exists(Path.Combine(tmp, "ruta-escalado.html")))
             return "el paquete descargado está incompleto.";

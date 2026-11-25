@@ -1,5 +1,9 @@
 # Cambios
 
+## 2.3.2 · 2026-11-25
+
+- **Arreglado «No se pudo consultar GitHub».** Sin cuenta, GitHub solo admite 60 consultas por hora desde cada conexión a internet; si se agotan, la app ahora mira la versión en otra dirección de GitHub que no tiene ese límite. La descarga de la actualización tampoco usa ya ese servicio limitado.
+
 ## 2.3.1 · 2026-11-25
 
 - **Cerrar ya no sale de la app.** La X de la ventana la esconde en la bandeja (junto al reloj) y sigue avisando de tus temporizadores. Para volver, doble clic en el icono. Para salir de verdad: clic derecho en el icono › **Salir**. Minimizar sigue funcionando como siempre.

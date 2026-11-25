@@ -83,8 +83,8 @@ dotnet publish D:\Proyectos\GitHub\RobRunPlugins\app -c Release -o D:\Proyectos\
 **Release and auto-update:**
 - Public repo `daviddaco1/rob-run-planner`. `RR.REPO` in core.js and `Repo` in Program.cs must match. The exe, `app/bin|obj|out`, `release/`, zips and `.lnk` are git-ignored.
 - To publish: bump `APP_VERSION` in core.js (plus package.json and CHANGELOG), commit and push, then run `.\tools\release.ps1`. It tests, builds, zips `release\RobRunPlanner.zip` and runs `gh release create v<APP_VERSION>`.
-- The page checks `releases/latest` at most every 6 h (`robrun-update-check` in localStorage) and on demand from the Copias tab. `RR.isNewer(tag)` only accepts strict `vX.Y.Z`. In a browser it links to the release; in the app it posts `{update:true}`.
-- The host then downloads only the `RobRunPlanner.zip` asset of that repo, extracts it to %TEMP%, writes `robrun-update.cmd` (waits for the PID to exit, robocopies over the exe folder, relaunches) and closes. Errors come back as `{updateError}`. User data in %LOCALAPPDATA% is never touched.
+- The page checks `releases/latest` at most every 6 h (`robrun-update-check` in localStorage) and on demand from the Copias tab. The anonymous API allows only 60 requests/h per IP, so on failure it falls back to `version` in `raw.githubusercontent.com/<repo>/main/package.json`. E2E tests pre-set `robrun-update-check` so they never call GitHub. `RR.isNewer(tag)` only accepts strict `vX.Y.Z`. In a browser it links to the release; in the app it posts `{update:true}`.
+- The host then downloads `https://github.com/<repo>/releases/latest/download/RobRunPlanner.zip` (no API call), extracts it to %TEMP%, writes `robrun-update.cmd` (waits for the PID to exit, robocopies over the exe folder, relaunches) and closes. Errors come back as `{updateError}`. User data in %LOCALAPPDATA% is never touched.
 
 **Distributable:** `%USERPROFILE%\OneDrive\Escritorio\Rob Run Planner\` is the user's local install, with the same layout as the release zip (exe, 4 web files, docs, `schema\`, `rutas\`). It updates itself from releases.
 

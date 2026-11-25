@@ -23,6 +23,9 @@ async function step(name, fn) {
 }
 try {
   const c = await connect(port, { match: p => p.url.includes('robrun.app'), timeout: 30000 });
+  // sin consultar GitHub en las pruebas (la API sin cuenta solo admite 60 consultas/hora por IP)
+  await c.send('Page.addScriptToEvaluateOnNewDocument', { source: `try { localStorage.setItem('robrun-update-check', String(Date.now())); } catch {}` });
+  await c.evaluate(`localStorage.setItem('robrun-update-check', String(Date.now())); true`);
   await sleep(1500);
   const ev = c.evaluate;
   await step('carga en WebView2 con el puente nativo y la ruta incluida', async () => {

@@ -27,7 +27,7 @@ try {
   const go = async () => { await c.send('Page.navigate', { url }); await sleep(900); };
   const ev = c.evaluate;
   // los diálogos nativos bloquearían la prueba: se aceptan solos en cada carga
-  await c.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.confirm = () => true; window.prompt = () => 'Ruta E2E';` });
+  await c.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.confirm = () => true; window.prompt = () => 'Ruta E2E'; try { localStorage.setItem('robrun-update-check', String(Date.now())); } catch {}` });
   await go();
   const S = () => ev('JSON.parse(JSON.stringify(RRApp.S))');
   const toasts = () => ev(`[...document.querySelectorAll('.toast')].map(t => t.textContent)`);

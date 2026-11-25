@@ -1126,10 +1126,12 @@ const UPD_KEY = 'robrun-update-check';
 async function checkUpdate(manual) {
   if (!manual && Date.now() - (+storage.get(UPD_KEY) || 0) < 6 * 3600e3) return; // como mucho cada 6 h
   storage.set(UPD_KEY, String(Date.now()));
-  let rel;
-  try { const r = await fetch(`https://api.github.com/repos/${RR.REPO}/releases/latest`, { headers: { Accept: 'application/vnd.github+json' } }); if (!r.ok) throw 0; rel = await r.json(); }
-  catch { if (manual) toast('No se pudo consultar GitHub. ¿Hay conexión?', 'error'); return; }
-  const tag = String(rel?.tag_name || '');
+  // 1) API de releases (lo exacto). Sin cuenta, GitHub solo deja 60 consultas por hora y por IP (compartida con
+  //    otros programas y con todo tu router); si se agota, 2) la versión de package.json en raw.githubusercontent.com.
+  let tag = '';
+  try { const r = await fetch(`https://api.github.com/repos/${RR.REPO}/releases/latest`, { headers: { Accept: 'application/vnd.github+json' } }); if (r.ok) tag = String((await r.json())?.tag_name || ''); } catch {}
+  if (!tag) try { const r = await fetch(`https://raw.githubusercontent.com/${RR.REPO}/main/package.json`, { cache: 'no-store' }); if (r.ok) { const v = String((await r.json())?.version || ''); if (v) tag = 'v' + v; } } catch {}
+  if (!tag) { if (manual) toast('No se pudo consultar GitHub. Revisa la conexión o prueba más tarde.', 'error'); return; }
   if (!RR.isNewer(tag)) { if (manual) toast(`Tienes la última versión (v${RR.APP_VERSION}).`, 'ok'); return; }
   const acts = host
     ? [{ label: 'Actualizar ahora', fn: () => { host.postMessage({ update: true }); toast('Descargando la actualización… La app se cerrará y se abrirá sola.', 'info'); } }]
