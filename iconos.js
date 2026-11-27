@@ -99,7 +99,18 @@
     chevron: '<path d="M9 6l6 6-6 6"/>',
     panel: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>',
     goto: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    minus: '<path d="M5 12h14"/>',
+    // herramientas y raideos
+    chip: '<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4M10 10h4v4h-4z"/>',
+    safe: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="12" r="3.5"/><path d="M12 8.5v1M12 14.5v1M8.5 12h1M14.5 12h1M6 20v1.5M18 20v1.5"/>',
+    fence: '<path d="M5 21V7l2-3 2 3v14M15 21V7l2-3 2 3v14M3 10h18M3 16h18M10 10v6M14 10v6"/>',
+    garage: '<path d="M3 21V9l9-5 9 5v12"/><path d="M7 21v-8h10v8M7 16h10"/>',
+    compare: '<path d="M6 20V10M12 20V4M18 20v-7M3 20h18"/>',
+    target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/>',
   };
+  // Estructuras raideables (catalogo.js raid.structures)
+  const raid = { trailer: 'trailer', small_house: 'house', mansion: 'mansion', workshop: 'factory', warehouse: 'crate', car_garage: 'garage', large_car_garage: 'garage',
+    grow_room: 'greenhouse', chem_lab: 'flask', mesh_fence: 'fence', metal_fence: 'fence', concrete_fence: 'fence', custom: 'shield' };
   // Elemento del catálogo → icono (por id). Lo que no está aquí usa el icono de su categoría.
   const items = {
     land_title_1: 'title', land_title_2: 'title', land_title_3: 'title',
@@ -127,5 +138,5 @@
   const rarity = id => /_l$|_3$/.test(id) ? 'r-l' : /_e$|_2$/.test(id) ? 'r-e' : /_u$/.test(id) ? 'r-u' : '';
   const sprite = () => `<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">${
     Object.entries(P).map(([k, d]) => `<symbol id="i-${k}" viewBox="0 0 24 24">${d}</symbol>`).join('')}</svg>`;
-  root.RR_ICONS = { paths: P, items, cats, types, kinds, phases, rarity, sprite };
+  root.RR_ICONS = { paths: P, items, cats, types, kinds, phases, raid, rarity, sprite };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

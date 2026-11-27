@@ -42,6 +42,15 @@
     robrun_fyi_patches: { url: 'https://robrun.fyi/patch-notes', date: '2026-11-24' },
     robrun_info_updates: { url: 'https://robrun.info/en/updates/', date: '2026-11-23' },
     usuario: { url: '', date: '2026-11-24', note: 'Comprobado por el jugador en su partida' },
+    // raideos (revisado 2026-11-27). Muchas copian robrun.info o los archivos del juego: coincidir no siempre es independiente.
+    timesaver_raid: { url: 'https://timesaver.gg/blog/rob-run-base-raid-guide', date: '2026-11-26' },
+    robrunmap_raid: { url: 'https://robrunmap.com/raid', date: '2026-11-18' },
+    robrunstatus_decoder: { url: 'https://robrunstatus.com/guides/decoder', date: '2026-11-19' },
+    xpjournal_decoder: { url: 'https://xpjournal.com/rob-run-decoder/', date: '2026-11-17' },
+    robrunwipe_raid: { url: 'https://robrunwipe.com/guides/how-to-raid', date: '2026-11-14' },
+    robrunwiki_net_raid: { url: 'https://robrunwiki.net/base-raiding/', date: '2026-11-18' },
+    robrungame_raid: { url: 'https://robrungame.org/raiding/', date: '2026-11-23' },
+    robrungg_raid: { url: 'https://robrungg.wiki/guides/base-building-and-raiding/', date: '2026-11-19' },
   };
 
   // tier: nivel de laptop necesario (= nivel del distrito de tu parcela). tier>1 implica tener parcela en ese distrito,
@@ -135,9 +144,9 @@
       src: ['timesaver_cargo', 'showgamer_bench'], notes: 'Colecciones: $50k (básica), $150k (especial), $500k (única).' },
     bank_account: { name: 'Cuenta bancaria', cat: 'Otro', type: 'Comprar', research: 0, buy: 5000, tier: 1, requires: [], unique: true, conf: 'una-fuente', src: ['timesaver_money'],
       notes: 'Ábrela sin máscara (modo Civil). El dinero del banco se pierde igualmente en el wipe.' },
-    fuse_u: { name: 'Fusible Uncommon', cat: 'Defensa', type: 'Comprar', research: 0, buy: 20000, tier: 1, requires: ['land_title_1'], conf: 'una-fuente', src: ['wikily_defense'], notes: '+1 defensa.' },
-    fuse_e: { name: 'Fusible Epic', cat: 'Defensa', type: 'Comprar', research: 0, buy: 100000, tier: 1, requires: ['land_title_1'], conf: 'una-fuente', src: ['wikily_defense'], notes: '+3 defensa.' },
-    fuse_l: { name: 'Fusible Legendary', cat: 'Defensa', type: 'Comprar', research: 0, buy: 250000, tier: 1, requires: ['land_title_1'], conf: 'una-fuente', src: ['wikily_defense'], notes: '+5 defensa.' },
+    fuse_u: { name: 'Fusible Uncommon', cat: 'Defensa', type: 'Comprar', research: 10000, buy: 20000, tier: 1, requires: ['land_title_1'], conf: 'confirmado', src: ['wikily_defense', 'timesaver_raid', 'robrunstatus_decoder', 'xpjournal_decoder'], notes: '+1 defensa en el Security System de la estructura donde se pone.' },
+    fuse_e: { name: 'Fusible Epic', cat: 'Defensa', type: 'Comprar', research: 150000, buy: 100000, tier: 2, requires: ['fuse_u'], conf: 'confirmado', src: ['wikily_defense', 'timesaver_raid', 'robrunstatus_decoder', 'xpjournal_decoder'], notes: '+3 defensa. Se investiga después del Uncommon.' },
+    fuse_l: { name: 'Fusible Legendary', cat: 'Defensa', type: 'Comprar', research: 500000, buy: 250000, tier: 3, requires: ['fuse_e'], conf: 'confirmado', src: ['wikily_defense', 'timesaver_raid', 'robrunstatus_decoder', 'xpjournal_decoder'], notes: '+5 defensa. Se investiga después del Epic. También por trueque: 1 fusible Epic + $250.000.' },
   };
   for (const [id, it] of Object.entries(items)) it.id = id;
 
@@ -181,10 +190,49 @@
     workshop: { name: 'Workshop', workbenches: 4, conf: 'confirmado', src: ['showgamer_bench', 'robrunmap'] },
   };
 
+  // Raideos. Fórmula (timesaver, robrunmap, robrunwipe, robrunstatus, xpjournal): defensa = base de la estructura + puntos de sus fusibles;
+  // decodificadores = defensa / puntos del decodificador, redondeando hacia arriba. Cada Security System se hackea aparte.
+  // Kefir no publica estas tablas: vienen de los archivos del juego vía robrun.info y se copian entre wikis.
+  const RAID_SRC = ['timesaver_raid', 'robrunmap_raid', 'wikily_defense', 'robrunstatus_decoder'];
+  const raid = {
+    structures: {
+      trailer: { name: 'Tráiler', defense: 5, fuseSlots: 9, conf: 'confirmado', src: RAID_SRC },
+      small_house: { name: 'Small House', defense: 15, fuseSlots: 27, conf: 'confirmado', src: RAID_SRC },
+      mansion: { name: 'Mansion', defense: 30, fuseSlots: 42, conf: 'confirmado', src: RAID_SRC },
+      workshop: { name: 'Workshop', defense: 5, fuseSlots: 9, conf: 'confirmado', src: RAID_SRC },
+      warehouse: { name: 'Warehouse', defense: 10, fuseSlots: 15, conf: 'confirmado', src: RAID_SRC, alt: 'Warehouse (crypto farm): 5 de defensa y 9 huecos (solo wikily)' },
+      car_garage: { name: 'Car Garage', defense: 4, fuseSlots: 6, conf: 'confirmado', src: RAID_SRC },
+      large_car_garage: { name: 'Large Car Garage', defense: 6, fuseSlots: 12, conf: 'confirmado', src: RAID_SRC },
+      grow_room: { name: 'Grow Room', defense: 5, fuseSlots: 9, conf: 'confirmado', src: RAID_SRC },
+      chem_lab: { name: 'Chemical Laboratory', defense: 3, fuseSlots: 6, conf: 'confirmado', src: RAID_SRC },
+      mesh_fence: { name: 'Mesh Fence', defense: 2, fuseSlots: 3, conf: 'confirmado', src: RAID_SRC },
+      metal_fence: { name: 'Metal Fence', defense: 5, fuseSlots: 6, conf: 'confirmado', src: RAID_SRC },
+      concrete_fence: { name: 'Concrete Fence', defense: 10, fuseSlots: 9, conf: 'confirmado', src: RAID_SRC, notes: 'La Farm Fence no tiene Security System: no se hackea.' },
+    },
+    // Puntos que quita cada decodificador. No se venden en tiendas: «value» es lo que paga el Fence (notoriedad 1), para valorar el coste.
+    decoders: {
+      u: { name: 'Decoder Uncommon', points: 1, value: 1000, conf: 'confirmado', src: ['timesaver_raid', 'robrunmap_raid', 'robrunstatus_decoder', 'xpjournal_decoder'],
+        alt: 'Valor ~$2.500 según 2 Min Drill (citado por timesaver)', notes: 'Botín aleatorio (tiendas y casas de Looty Bay, cajas fuertes). Una unidad en el pase de batalla de la temporada 1.' },
+      e: { name: 'Decoder Epic', points: 3, value: 5000, conf: 'confirmado', src: ['timesaver_raid', 'robrunmap_raid', 'robrunstatus_decoder', 'xpjournal_decoder'],
+        barter: { u: 3, cash: 10000, conf: 'confirmado', src: ['timesaver_raid', 'robrunmap_raid', 'robrunstatus_decoder', 'xpjournal_decoder'], notes: 'Suspicious Door del Lenny\'s Motel. También 1 Action Camera Epic llena.' } },
+      l: { name: 'Decoder Legendary', points: 5, value: 40000, conf: 'discrepancia', src: ['timesaver_raid', 'robrunmap_raid', 'robrunstatus_decoder', 'xpjournal_decoder'],
+        notes: 'Los 5 puntos coinciden; cómo se consigue no: «botín aleatorio» según robrunmap, sin fuente conocida según robrunstatus y xpjournal.' },
+    },
+    fuses: { u: { item: 'fuse_u', points: 1 }, e: { item: 'fuse_e', points: 3 }, l: { item: 'fuse_l', points: 5 } },
+    secondsPerDecoder: { value: 12, conf: 'confirmado', src: ['timesaver_raid', 'robrunmap_raid', 'robrunstatus_decoder', 'xpjournal_decoder'], notes: 'Cada decodificador se gasta al usarlo.' },
+    accessMinutes: { value: 7, conf: 'discrepancia', src: ['wikily_defense', 'robrunstatus_decoder'], alt: '8 min de acceso según robrunstatus (archivos del juego); el resto no da cifra',
+      notes: 'Tras el hackeo, el dueño puede reparar en segundos y echarte.' },
+    settlementBonus: { value: 3, conf: 'una-fuente', src: ['wikily_defense', 'robrunstatus_decoder'], notes: 'Bunker o estructura especial del asentamiento: +3 de defensa a casas, anexos y vallas cercanos. Las dos fuentes lo describen distinto.' },
+    formula: { conf: 'discrepancia', src: ['timesaver_raid', 'robrunwipe_raid', 'robrunstatus_decoder', 'xpjournal_decoder', 'robrungame_raid'],
+      notes: 'Suma de puntos, con ejemplos en 4 fuentes. robrungame dice que cada fusible sube el tiempo «exponencialmente», sin cifras.' },
+    masterKey: { conf: 'pendiente', src: ['robrunstatus_decoder', 'xpjournal_decoder', 'timesaver_raid'],
+      notes: 'Cajas fuertes y Security Cabinets no se abren con decodificadores: hace falta Master Key (Black Market, tras desbloquearla). Precio no publicado.' },
+  };
+
   G.RR_CATALOG = {
-    version: '2026-11-24',
+    version: '2026-11-27',
     game: '0.7.0.4005-0.7.0.4040 (Early Access; las fuentes no coinciden en la build exacta)',
-    verified: '2026-11-24',
-    SOURCES, items, defaults, notoriety, limits, bases,
+    verified: '2026-11-27',
+    SOURCES, items, defaults, notoriety, limits, bases, raid,
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

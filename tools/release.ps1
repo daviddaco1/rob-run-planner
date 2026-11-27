@@ -1,6 +1,8 @@
 # Publica una versión: compila el .exe, empaqueta RobRunPlanner.zip y crea la release en GitHub.
-# Uso (desde la raíz del repo):  .\tools\release.ps1
+# Uso (desde la raíz del repo):  .\tools\release.ps1            (compila, empaqueta y publica)
+#                                  .\tools\release.ps1 -NoPublish (solo compila y deja release\RobRunPlanner.zip)
 # La versión sale de APP_VERSION en core.js; la app instalada se actualiza si la etiqueta es más nueva.
+param([switch]$NoPublish)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 Set-Location $root
@@ -24,6 +26,7 @@ Remove-Item app\out -Recurse -Force
 $zip = Join-Path $root 'release\RobRunPlanner.zip'
 Compress-Archive -Path "$stage\*" -DestinationPath $zip
 
+if ($NoPublish) { Write-Host "Paquete listo (sin publicar): $zip"; return }
 gh release create $tag $zip --title "Rob Run Planner $tag" --notes "Novedades en CHANGELOG.md. Descarga RobRunPlanner.zip, descomprímelo y abre RobRunPlanner.exe. Si ya lo tienes, la app te avisa y se actualiza sola (tus datos no se tocan)."
 if ($LASTEXITCODE) { throw 'Falló gh release create' }
 Write-Host "Publicada $tag"

@@ -296,7 +296,7 @@ test('cada ruta tiene su granja: cambiar de ruta cambia de granja sin perder nad
 test('migración 2 → 3: la granja única pasa a la ruta activa', () => {
   const v2 = { schema: 2, routes: [{ id: 'a', name: 'A', steps: [] }, { id: 'b', name: 'Mi ruta', steps: [] }], cur: 'b', farm: { tables: [{ kind: 'plant', name: 'A-1', g: 6 }] } };
   const { state, from, notes } = RR.migrate(v2);
-  assert.equal(from, 2); assert.equal(state.schema, 3);
+  assert.equal(from, 2); assert.equal(state.schema, RR.SCHEMA);
   assert.equal(state.farm.tables[0].name, 'A-1'); assert.equal(state.farmOf, 'b');
   assert.ok(notes.some(n => n.includes('«Mi ruta»')));
   RR.ops.setCur(state, 'a'); assert.equal(state.farm.tables.length, 0);
@@ -349,6 +349,151 @@ test('iconos: cada elemento del catálogo, tipo de paso, estación y fase tiene 
   for (const t of RR.TYPES) assert.ok(has(IC.types[t]), `tipo sin icono: ${t}`);
   for (const k of Object.keys(RR.KINDS)) assert.ok(has(IC.kinds[k]), `estación sin icono: ${k}`);
   for (const p of RR.PHASES) assert.ok(has(IC.phases[p]), `fase sin icono: ${p}`);
+  for (const k of [...Object.keys(CAT.raid.structures), 'custom']) assert.ok(has(IC.raid[k]), `estructura sin icono: ${k}`);
   for (const k of Object.keys(IC.items)) assert.ok(CAT.items[k], `icono para un elemento que ya no existe: ${k}`);
   assert.match(IC.sprite(), /<symbol id="i-money" viewBox="0 0 24 24">/);
+});
+
+// ---------- simulador, comparador, optimizador y raideos (esquema 4) ----------
+const simWith = (groups, extra = {}) => RR.normSim({ name: 'T', hours: 4, active: 4, check: 15, ...extra, groups });
+
+test('simulador: 4 mesas con 6 verdes, sin mejoras = 4 × 72.000 $/h, teórico = efectivo si atiendes a tiempo', () => {
+  const r = RR.simulate(simWith([{ kind: 'plant', g: 6, count: 4 }]));
+  assert.equal(r.thPerHour, 288000);
+  assert.equal(r.effPerHour, 288000);
+  assert.equal(r.cycles, 16);
+  assert.equal(r.investment, 4 * 40000);
+  assert.equal(r.paybackEff, 1);
+  assert.equal(r.efficiency, 1);
+});
+
+test('simulador: revisar cada 50 min con ciclos de 60 hace perder ciclos; ausente no se reinicia nada', () => {
+  const sim = simWith([{ kind: 'plant', g: 6, count: 1 }], { hours: 8, active: 8, check: 50 });
+  const r = RR.simulate(sim);
+  // atiende en 0, 50, 100, ... → reinicia en 0, 100, 200, ... (ciclos de 100 min efectivos): terminan en 60, 160, 260, 360 y 460 → 5 ciclos
+  assert.equal(r.cycles, 5);
+  assert.ok(r.effPerHour < r.thPerHour);
+  const away = RR.simulate({ ...sim, active: 1 });
+  assert.equal(away.cycles, 1); // solo el que dejó en marcha
+});
+
+test('simulador: la Tool Box deja más cajas en cola y aguanta sin atender', () => {
+  const base = { kind: 'repack', count: 1 }, opt = { hours: 4, active: 0, check: 15 };
+  assert.equal(RR.simulate(simWith([base], opt)).cycles, 1);
+  const withBox = RR.simulate(simWith([{ ...base, box: 'tool_box_e' }], opt));
+  assert.ok(withBox.cycles > 1);
+  assert.ok(withBox.actionsPerHour <= RR.simulate(simWith([base], { ...opt, active: 4 })).actionsPerHour);
+});
+
+test('simulador: insumos limitados → déficit, estaciones ociosas y sin contar dos veces el coste', () => {
+  const sim = simWith([{ kind: 'repack', count: 2, sell: 35000, cost: 10000 }], { hours: 2, active: 2, check: 0, supplyBox: 1, stockBox: 0 });
+  const r = RR.simulate(sim);
+  assert.ok(r.shortage.box > 0);
+  assert.equal(r.inputs.box, r.cycles);                  // cada ciclo gasta exactamente una caja
+  assert.equal(r.cost, r.cycles * 10000);                 // el coste de la caja se cuenta una vez
+  assert.equal(r.gross, r.cycles * 35000);
+  assert.ok(r.bottlenecks.some(b => /Faltan/.test(b.msg)));
+});
+
+test('simulador: validación de límites del juego y arreglo propuesto', () => {
+  const sim = simWith([{ kind: 'repack', count: 3 }], { baseType: 'trailer' });
+  const err = RR.validateSim(sim).find(i => i.code === 'benchSlots');
+  assert.equal(err.level, 'error');
+  assert.deepEqual(err.fix, { kind: 'baseType', value: 'mansion' });
+  const many = simWith([{ kind: 'plant', g: 6, count: 13 }], { rooms: 2 });
+  assert.ok(RR.validateSim(many).some(i => i.code === 'tableCap' && i.level === 'error'));
+  assert.ok(RR.validateSim(simWith([{ kind: 'chem', count: 1 }])).some(i => i.code === 'chemNoValue'));
+});
+
+test('simulador: datos extremos o basura no dan NaN ni infinitos', () => {
+  for (const x of [{}, { hours: -5, active: 99, check: -1 }, { hours: 1e9, groups: [{ kind: 'plant', g: 99, count: 1e9 }] }, { groups: [null, 5, { kind: 'chem', crystals: 'x' }] }]) {
+    const sim = RR.normSim(x), r = RR.simulate(sim);
+    for (const k of ['effPerHour', 'thPerHour', 'net', 'investTotal']) assert.ok(Number.isFinite(r[k]), k);
+    assert.ok(sim.active <= sim.hours);
+  }
+});
+
+test('comparador: marca el mejor en beneficio, inversión y recuperación', () => {
+  const a = simWith([{ kind: 'plant', g: 6, count: 4 }]), b = simWith([{ kind: 'plant', g: 6, count: 1 }]);
+  a.id = 'a'; b.id = 'b';
+  const c = RR.compareSims([a, b], 4);
+  assert.equal(c.best.profit, 'a');
+  assert.equal(c.best.invest, 'b');
+});
+
+test('optimizador: respeta presupuesto, huecos de banco y tier; explica la recomendación', () => {
+  const o = RR.optimize({ budget: 300000, tier: 1, baseType: 'trailer', rooms: 1, objective: 'profit', hours: 4, active: 4, check: 15 });
+  assert.ok(o.results.length);
+  for (const x of o.results) {
+    assert.ok(x.inv <= 300000);
+    assert.ok(x.groups.filter(g => g.kind === 'repack').reduce((a, g) => a + g.count, 0) <= 1);
+    assert.ok(x.groups.filter(g => g.kind === 'plant').reduce((a, g) => a + g.count, 0) <= 6);
+    for (const g of x.groups) for (const k of Object.keys(g.upg)) if (g.upg[k]) assert.ok((global.RR_CATALOG.items[k].tier || 1) <= 1);
+    assert.match(x.why, /\$\/h/);
+  }
+  assert.ok(o.notes.some(n => /cristales/.test(n))); // sin cristales apuntados el laboratorio no entra
+  const cheap = RR.optimize({ budget: 1e7, tier: 3, baseType: 'workshop', objective: 'invest', hours: 4, active: 4, check: 15 });
+  assert.ok(cheap.results[0].inv <= Math.min(...cheap.results.map(x => x.inv)));
+  const capped = RR.optimize({ budget: 1e9, tier: 3, baseType: 'workshop', objective: 'profit', maxEval: 50 });
+  assert.equal(capped.truncated, true);
+});
+
+test('raideo: Small House con 10 fusibles Epic = 45 puntos = 15 Decoders Epic', () => {
+  const raid = RR.normRaid({ buy: 'e', barter: false, structs: [{ kind: 'small_house', fe: 10 }] });
+  assert.equal(RR.structDefense(raid.structs[0]), 45);
+  const p = RR.raidPlan(raid);
+  assert.equal(p.missing.e, 15);
+  assert.equal(p.rows[0].waste, 0);
+  assert.equal(p.seconds, 15 * 12);
+  assert.equal(p.total, 15 * 5000);
+  assert.equal(p.feasible, false);
+});
+
+test('raideo: usa primero el inventario, minimiza el coste y calcula los materiales del trueque', () => {
+  const raid = RR.normRaid({ buy: 'e', barter: true, inv: { u: 2, e: 1, l: 0 }, structs: [{ kind: 'trailer' }] }); // 5 puntos
+  const p = RR.raidPlan(raid);
+  assert.deepEqual(p.rows[0].use, { l: 0, e: 1, u: 2 });
+  assert.equal(p.missing.e, 0);
+  assert.equal(p.feasible, true);
+  const more = RR.raidPlan(RR.normRaid({ ...raid, inv: { u: 0, e: 0, l: 0 }, reserve: 50 }));
+  assert.equal(more.missing.e, 2);
+  assert.equal(more.reserve, 1);
+  assert.deepEqual(more.materials, { u: 9, cash: 30000 }); // (2 + 1 reserva) × (3 Uncommon + $10.000)
+});
+
+test('raideo: fusibles por encima de los huecos se rechazan con explicación; rutas alternativas', () => {
+  const S = RR.normState({});
+  const r = RR.ops.addRaid(S, 'X'), fence = RR.ops.addRaidStruct(S, r.id, 'mesh_fence'), house = RR.ops.addRaidStruct(S, r.id, 'mansion');
+  assert.throws(() => RR.ops.setRaidStruct(S, r.id, fence.id, 'fl', 4), RR.UserError);
+  const a = RR.ops.addRaidRoute(S, r.id, 'Por la valla'), b = RR.ops.addRaidRoute(S, r.id, 'Solo la casa');
+  RR.ops.setRaidRoute(S, r.id, b.id, 'toggle', fence.id);
+  const c = RR.compareRaidRoutes(S.raids[0]);
+  assert.equal(c.best.decoders, b.id);
+  assert.equal(c.best.time, b.id);
+  RR.ops.delRaidStruct(S, r.id, house.id);
+  assert.deepEqual(RR.checkInvariants(RR.normState(S)), []);
+});
+
+test('raideo: rentabilidad con el botín y punto de equilibrio', () => {
+  const p = RR.raidPlan(RR.normRaid({ buy: 'u', loot: 20000, structs: [{ kind: 'trailer' }] }));
+  assert.equal(p.total, 5000);
+  assert.equal(p.lootProfit.profit, 15000);
+  assert.equal(p.lootProfit.breakeven, 5000);
+});
+
+test('migración 3 → 4: rutas y granjas intactas, escenarios y raideos vacíos, aviso', () => {
+  const v3 = { schema: 3, routes: [{ id: 'r1', name: 'Mía', steps: [{ id: 's1', text: 'x', target: 5 }] }], cur: 'r1', farmOf: 'r1', farm: { tables: [{ id: 't1', kind: 'plant', g: 4 }] }, farms: {} };
+  const m = RR.migrate(v3);
+  assert.equal(m.state.schema, 4);
+  assert.deepEqual(m.state.sims, []);
+  assert.deepEqual(m.state.raids, []);
+  assert.equal(m.state.farm.tables[0].g, 4);
+  assert.equal(m.state.routes[0].steps[0].target, 5);
+  assert.ok(m.notes.some(n => /simulador/.test(n)));
+  // escenarios y raideos sobreviven a guardar y cargar
+  const S = m.state; RR.ops.addSimFromFarm(S); RR.ops.addRaid(S, 'Base');
+  const again = RR.migrate(JSON.parse(JSON.stringify(S))).state;
+  assert.equal(again.sims[0].groups[0].g, 4);
+  assert.equal(again.raids[0].name, 'Base');
+  assert.equal(again.farm.tables[0].start, null); // la copia al simulador no arranca temporizadores
 });

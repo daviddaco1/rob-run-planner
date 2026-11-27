@@ -59,6 +59,26 @@ Kefir **no publica tablas de precios**. Sus notas de parche (por ejemplo, el 4 d
 - **No se pudieron leer:** metaforge.app (403), sportskeeda (405) y SteamDB (403). Las noticias de Steam se cargan con JavaScript; hay que revisarlas a mano.
 - **Cuidado:** el repositorio `GeneralAlternator/robrun-raid-calculator-2026` pide ejecutar un .exe como administrador y tiene etiquetas de «esp» y «trainer». Probablemente es malware: no lo enlaces ni lo uses.
 
+## Raideos (revisado 2026-11-27)
+
+Fuentes leídas: timesaver.gg, robrunmap.com, wikily.gg, robrunstatus.com, xpjournal.com, robrunwipe.com, robrunwiki.net, robrungame.org y robrungg.wiki (claves `*_raid` y `*_decoder` en `SOURCES`). Kefir no publica tablas: casi todas vienen de los archivos del juego vía robrun.info y se copian entre sí, así que coincidir no es confirmación independiente.
+
+- **Fórmula** (`discrepancia`): defensa = defensa base de la estructura + puntos de sus fusibles (+3 con bunker); decodificadores = defensa / puntos del decodificador, redondeando hacia arriba. Cada Security System se hackea aparte. Cuatro fuentes la usan con ejemplos; robrungame dice que cada fusible sube el tiempo «exponencialmente», sin cifras.
+- **Estructuras** (`confirmado`, coinciden timesaver, robrunmap, wikily y robrunstatus): Tráiler 5/9 huecos, Small House 15/27, Mansion 30/42, Workshop 5/9, Warehouse 10/15, Car Garage 4/6, Large Car Garage 6/12, Grow Room 5/9, Chemical Laboratory 3/6, Mesh Fence 2/3, Metal Fence 5/6, Concrete Fence 10/9. La Farm Fence no se hackea. Solo wikily lista «Warehouse (crypto farm)» 5/9.
+- **Decodificadores**: Uncommon 1 pt, Epic 3 pt, Legendary 5 pt. No se venden en tiendas. Epic por trueque en la Suspicious Door (3 Uncommon + $10.000 o una Action Camera Epic llena). Legendary: puntos confirmados, origen en `discrepancia`. Para el coste se usa lo que paga el Fence (1.000 / 5.000 / 40.000; 2 Min Drill da ~2.500 para el Uncommon).
+- **Fusibles**: +1 / +3 / +5. Uncommon $10.000 investigación + $20.000; Epic $150.000 + $100.000 (tier 2); Legendary $500.000 + $250.000 (tier 3, o trueque 1 Epic + $250.000).
+- **Tiempo**: 12 s por decodificador (`confirmado`). Margen tras abrir: 7 min (wikily) u 8 min (robrunstatus): `discrepancia`.
+- **Cajas fuertes y Security Cabinets**: necesitan Master Key; su precio no está publicado (`pendiente`, la app lo pide).
+- **No hay azar conocido** en el hackeo: la app no inventa probabilidades. El consumo esperado es el del plan y el conservador añade la reserva que elijas.
+- **Pendiente de verificar en el juego**: cómo redondea el juego si sobran puntos de un decodificador, si el bunker suma a todas las estructuras, y el tiempo real de acceso.
+
+## Simulador de farmeo: modelo
+
+- **Teórico**: cada estación produce sin pausa (ciclo de `calc()`).
+- **Efectivo**: el jugador atiende en el minuto 0 y luego cada «Revisas cada» minutos mientras está activo; al atender reinicia lo que esté parado y rellena la cola (1 ciclo en mesa y laboratorio; tantas cajas como huecos en el banco con Tool Box). Solo cuentan ciclos que terminan dentro de la duración. Si no atiendes, nada se reinicia.
+- **Insumos**: cada ciclo de banco gasta 1 caja y cada lote de laboratorio 1 lote de reactivos; con tope por hora, los primeros ciclos se llevan el insumo y el resto quedan sin hacer (déficit).
+- **No modelado** (sin datos públicos): límite de laboratorios por base (lo pones tú en el optimizador), semillas u otros costes de la mesa (campo «Otros costes/ciclo»), Cargo Workbench (botín sin valor publicado).
+
 ## Iconos
 
 - **Origen:** todos los iconos de la app están dibujados para este proyecto (`iconos.js`, SVG de 24×24 con trazo). Se publican con el resto del repositorio y no se descarga nada al usarlos.

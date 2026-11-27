@@ -18,6 +18,7 @@
   --r-u:#4cc38a;--r-e:#a879ff;--r-l:#f2b632;
   --k-title:#f2b632;--k-base:#8b97ff;--k-grow:#4cc38a;--k-smug:#f0993e;--k-chem:#3fc6d8;--k-def:#ef5a52;--k-other:#9aa0ad;
   --q-g:#4cc38a;--q-p:#a879ff;--q-o:#f2b632;
+  --c1:#f2b632;--c2:#5ea8f2;--c3:#a879ff;--c4:#4cc38a;--c5:#ef7a6f;--c6:#3fc6d8; /* series de gráficos */
   --s1:.25rem;--s2:.5rem;--s3:.75rem;--s4:1rem;--s5:1.5rem;--s6:2rem;
   --rad:12px;--rad-s:8px;--rad-xs:6px;
   --font:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;
@@ -297,6 +298,57 @@ dialog::backdrop{background:#000a;backdrop-filter:blur(2px)}
 .pick-grid button span{display:flex;flex-direction:column;min-width:0}
 .pick-grid button small{font-size:.75rem}
 
+/* ===== centro de herramientas (Calculadoras) ===== */
+.subnav{display:flex;gap:.3rem;flex-wrap:wrap;background:var(--bg2);border:1px solid var(--line);border-radius:var(--rad);padding:.3rem}
+.subnav button{background:transparent;border-color:transparent;color:var(--muted);gap:.5rem}
+.subnav button[aria-selected=true]{background:var(--acc-soft);color:var(--acc);border-color:color-mix(in srgb,var(--acc) 40%,transparent)}
+.cnt.n{background:var(--line2);color:var(--text);border-radius:999px;font-size:.72rem;padding:0 .4rem;font-style:normal;font-weight:700}
+.cols2{display:grid;gap:var(--s3);grid-template-columns:minmax(0,1fr);align-items:start}
+@media (min-width:1200px){.cols2{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}.cols2>.col:last-child{position:sticky;top:calc(var(--top-h) + var(--s3))}}
+@media (min-width:2200px){.cols2{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr)}}
+.cols2>.col{gap:var(--s3);min-width:0}
+.cols2>.col>.card+.card{margin-top:0}
+.toolbar .row{gap:.4rem}.toolbar>.row>.i{color:var(--acc)}
+.sim-groups{grid-template-columns:repeat(auto-fill,minmax(min(100%,20rem),1fr))}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:var(--rad-s);overflow:hidden;flex:none}
+.stepper button{border:0;border-radius:0;min-width:2rem;padding:.3rem}
+.stepper input{width:3.4rem;border:0;border-radius:0;text-align:center;-moz-appearance:textfield}
+.stepper input::-webkit-inner-spin-button{-webkit-appearance:none}
+.chart{margin:0 auto;max-width:72rem} /* en ultrawide no se estira hasta ser ilegible */
+@media (max-width:900px){#saveState{display:none}}
+.chart svg{width:100%;height:auto;display:block;overflow:visible}
+.chart text{fill:var(--muted);font-size:11px;font-family:var(--font)}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .zero{stroke:var(--line2);stroke-width:1.5}
+.legend{display:flex;flex-wrap:wrap;gap:.3rem 1rem;font-size:.82rem;color:var(--muted);margin-top:.4rem}
+.legend i,.sw{display:inline-block;width:.8rem;height:.8rem;border-radius:3px;margin-right:.35rem;vertical-align:-.1em;flex:none}
+.bars{display:flex;flex-direction:column;gap:.4rem}
+.bar-row{display:grid;grid-template-columns:minmax(6rem,10rem) 1fr auto;gap:.6rem;align-items:center;font-size:.88rem}
+.bar-row .bl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.bar-row .bt{height:.6rem;background:#272830;border-radius:999px;overflow:hidden}
+.bar-row .bt i{display:block;height:100%;border-radius:inherit}
+.bar-row b{font-variant-numeric:tabular-nums;white-space:nowrap}
+button.link{background:none;border:0;padding:0;min-height:0;color:var(--info);text-decoration:underline;font:inherit}
+tr.sel td{background:var(--acc-soft)}
+table.cmp td .badge{margin-left:.3rem}
+.opt-res{border:1px solid var(--line);border-radius:var(--rad-s);padding:var(--s3);background:var(--bg2)}
+.opt-res+.opt-res{margin-top:var(--s2)}
+.opt-res.top{border-color:color-mix(in srgb,var(--acc) 55%,var(--line))}
+.rank{font-weight:800;color:var(--acc);min-width:2rem}
+.why{margin:.5rem 0;color:var(--text);font-size:.92rem}
+.raid-s{border:1px solid var(--line);border-left:3px solid var(--k-def);border-radius:var(--rad-s);padding:.55rem .7rem;background:var(--bg2)}
+.raid-s .num{font-weight:700;color:var(--muted);min-width:1.4rem}
+.raid-s .tools button{min-height:1.8rem;padding:.2rem;min-width:1.8rem;background:transparent;border-color:transparent;color:var(--muted)}
+.raid-s .plan{display:block;margin-top:.4rem}
+.fuse{display:inline-flex;align-items:center;gap:.25rem}
+.raid-route{border-top:1px solid var(--line);padding-top:.5rem;margin-top:.5rem}
+.chip.filter[data-locked]{opacity:.45}
+small.src a{font-size:.78rem}
+#saveState{font-size:.78rem;color:var(--ok);opacity:0;transition:opacity .4s}
+#saveState.on{opacity:1}
+.span2{grid-column:span 2}
+.kpis.sm{grid-template-columns:repeat(auto-fill,minmax(min(100%,7.6rem),1fr))}
+
 /* ===== puntos de corte ===== */
 /* ventana pequeña: menú arriba en horizontal */
 @media (max-width:1023.98px){
@@ -364,6 +416,7 @@ dialog::backdrop{background:#000a;backdrop-filter:blur(2px)}
       <div class="top-t"><svg class="i" aria-hidden="true" id="pageIcon"><use href="#i-route"/></svg><h1 id="pageTitle">Ruta</h1><small id="pageSub"></small></div>
       <div class="top-kpi" id="topKpi"></div>
       <span class="tools">
+        <small id="saveState" aria-live="polite">✓ Guardado</small>
         <button id="undo" class="ghost" title="Deshacer (Ctrl+Z)" disabled><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg><span class="lbl">Deshacer</span></button>
         <button id="redo" class="ghost" title="Rehacer (Ctrl+Y)" disabled><svg class="i" aria-hidden="true"><use href="#i-redo"/></svg><span class="lbl">Rehacer</span></button>
       </span>
@@ -385,6 +438,7 @@ dialog::backdrop{background:#000a;backdrop-filter:blur(2px)}
               <button id="delRoute" class="danger"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg>Borrar</button>
             </div>
             <input id="importFile" type="file" accept=".json,application/json" hidden>
+            <details id="routeMore" class="mt" open><summary class="row" style="cursor:pointer;color:var(--muted)"><svg class="i" aria-hidden="true"><use href="#i-edit"/></svg>Nombre, meta y «Ya tengo»</summary>
             <label class="fld mt" for="name">Nombre<input id="name" maxlength="120"></label>
             <label class="fld mt" for="goal">Meta final<input id="goal" maxlength="300" placeholder="Ej: título tier 3 + talleres al máximo"></label>
             <div class="fld mt">
@@ -395,6 +449,7 @@ dialog::backdrop{background:#000a;backdrop-filter:blur(2px)}
                 <button id="havePick" class="icon" title="Elegir del catálogo" aria-label="Elegir del catálogo"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg></button>
               </div>
             </div>
+            </details>
             <div id="draftBar"></div>
           </div>
           <div class="card">
@@ -426,12 +481,13 @@ dialog::backdrop{background:#000a;backdrop-filter:blur(2px)}
                 <label class="fld"><span><i class="dot q-p"></i> Bolsa morada</span><input type="number" min="0" data-g="pp"></label>
                 <label class="fld"><span><i class="dot q-o"></i> Bolsa dorada</span><input type="number" min="0" data-g="po"></label>
                 <label class="fld">Tier del laptop<select data-g="tier"><option>1</option><option>2</option><option>3</option></select></label>
-                <label class="fld">Base<select data-g="baseType" id="baseType"></select></label>
+                <label class="fld span2">Base<select data-g="baseType" id="baseType"></select></label>
               </div>
               <label class="fld">Mejoras de velocidad<select data-g="stacking">
                 <option value="add">Se suman (60 → 40 min con las 3)</option>
                 <option value="mult">Se multiplican (60 → 38 min)</option>
                 <option value="reduce">Restan tiempo (60 → 30 min)</option></select></label>
+              <small>Kefir no ha confirmado cómo se combinan: compáralo con tu partida y cámbialo si no cuadra.</small>
               <small>Valores de wikis de fans (nov 2026), ajústalos a tu servidor. Detalle y fuentes en «Datos del juego».</small>
             </div>
           </details>
@@ -490,7 +546,7 @@ const confBadge = c => c ? `<span class="badge c-${esc(c)}" title="Confianza del
 const itemName = id => CAT.items[id]?.name || id;
 const host = window.chrome?.webview;
 const TABS = { ruta: ['Ruta', 'route', 'Pasos por fase, dependencias y validación'], granja: ['Granja', 'planter', 'Estaciones, mejoras y temporizadores'],
-  calc: ['Calculadoras', 'calc', 'Rentabilidad, mejoras y simulador'], datos: ['Datos del juego', 'book', 'Catálogo con fuentes y nivel de confianza'], copias: ['Copias', 'db', 'Copias de seguridad y actualizaciones'] };
+  calc: ['Calculadoras', 'calc', 'Producción, simulador, comparador, optimizador y raideos'], datos: ['Datos del juego', 'book', 'Catálogo con fuentes y nivel de confianza'], copias: ['Copias', 'db', 'Copias de seguridad y actualizaciones'] };
 
 // ---------- iconos ----------
 if (IC) document.body.insertAdjacentHTML('afterbegin', IC.sprite());
@@ -542,6 +598,8 @@ function save() {
   const ok = storage.set(KEY, JSON.stringify(S));
   if (!ok && !saveFailed) notice('No se pudo guardar (almacenamiento lleno o bloqueado). Exporta una copia en «Copias» para no perder cambios.', 'error');
   saveFailed = !ok;
+  const el = document.getElementById('saveState'); // aviso discreto de que se guardó
+  if (ok && el) { el.classList.add('on'); clearTimeout(save.t); save.t = setTimeout(() => el.classList.remove('on'), 1200); }
 }
 for (const n of RR.syncIncluded(S, window.RUTAS || [])) {
   if (n.kind === 'update') notice(`Hay una versión nueva de la ruta incluida «${n.name}» (v${n.version}). Tu ruta actual y su progreso no se tocan.`, 'info',
@@ -556,6 +614,7 @@ const saveUI = () => storage.set(UIKEY, JSON.stringify(ui));
 $('#app').classList.toggle('nav-mini', !!ui.navMini);
 $('#navToggle').onclick = () => { ui.navMini = !ui.navMini; saveUI(); $('#app').classList.toggle('nav-mini', ui.navMini); };
 if (innerWidth < 700) $('#farmCfg').open = false; // en ventanas pequeñas los ajustes empiezan plegados
+if (innerWidth < 1024) $('#routeMore').open = false; // y los datos de la ruta, para ver antes los pasos
 
 // ---------- cambios atómicos + deshacer ----------
 // Cada cambio se aplica sobre una copia, se normaliza y se valida. Si mete errores nuevos en una ruta activa (no borrador)
@@ -625,6 +684,15 @@ function showTab(name) {
   render();
 }
 $('.tabs').onclick = e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); };
+// Teclado en las listas de pestañas (menú y subsecciones): flechas, Inicio y Fin cambian de pestaña
+document.addEventListener('keydown', e => {
+  const list = e.target.closest?.('[role=tablist]'); if (!list || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return;
+  const tabs = [...list.querySelectorAll('[role=tab]')], i = tabs.indexOf(e.target.closest('[role=tab]')); if (i < 0) return;
+  e.preventDefault();
+  const j = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : (i + (['ArrowLeft', 'ArrowUp'].includes(e.key) ? -1 : 1) + tabs.length) % tabs.length;
+  const sel = tabs[j].dataset.tab || tabs[j].dataset.csub; tabs[j].click();
+  document.querySelector(`[role=tab][data-tab="${sel}"],[role=tab][data-csub="${sel}"]`)?.focus();
+});
 function renderTop() {
   const rate = RR.farmTotals(S.farm).perHour;
   $('#topKpi').innerHTML = `<span class="badge" title="Producción teórica de la granja de esta ruta">${ico('trend')}${money(rate)}/h</span>
@@ -938,7 +1006,8 @@ function renderFarm() {
   $('#baseType').innerHTML = Object.entries(CAT.bases).map(([k, b]) => `<option value="${k}">${esc(b.name)} (${b.workbenches} banco${b.workbenches > 1 ? 's' : ''})</option>`).join('');
   $$('[data-g]').forEach(el => { if (document.activeElement !== el) el.value = F[el.dataset.g]; });
   $('#tables').innerHTML = F.tables.map(t => tableHTML(t, issues)).join('') || `<div class="empty" style="grid-column:1/-1">No tienes estaciones. Añade una mesa, un banco o un taller arriba.</div>`;
-  $('#farmIssues').innerHTML = issues.filter(i => !i.stationId).map(i => issueHTML(i)).join('');
+  // el aviso de cómo se combinan las mejoras ya está explicado junto a su selector en Ajustes
+  $('#farmIssues').innerHTML = issues.filter(i => !i.stationId && i.code !== 'stacking').map(i => issueHTML(i)).join('');
   const kpi = (icon, label, val) => `<div class="kpi">${ico(icon)}<span><small>${label}</small><b>${val}</b></span></div>`;
   $('#farmSum').innerHTML = kpi('planter', 'Mesas · plantas', `${tot.plant} · ${tot.plants}`) + kpi('crate', 'Bancos', tot.repack) + kpi('flask', 'Labs', tot.chem)
     + kpi('trend', 'Total por hora', money(tot.perHour)) + kpi('play', 'En marcha', money(tot.runningPerHour) + '/h') + kpi('coin', 'Por día (24 h)', money(tot.perHour * 24));
@@ -1014,17 +1083,40 @@ function tick() {
 }
 setInterval(tick, 1000);
 
-// ---------- CALCULADORAS ----------
-let sim = RR.normStation({ kind: 'plant', g: 6 });
+// ---------- CALCULADORAS: centro de herramientas ----------
+// Subsecciones: producción (tu granja), simulador, comparador, optimizador y raideos. La subsección y la selección se recuerdan
+// por pantalla (robrun-ui). Escenarios y bases a raidear son datos tuyos (S.sims, S.raids) y pasan por commit() como todo lo demás.
+const CALC = { prod: ['Producción', 'chart'], sim: ['Simulador', 'sliders'], cmp: ['Comparador', 'compare'], opt: ['Optimizador', 'target'], raid: ['Raideos', 'chip'] };
+ui.calc = Object.assign({ sub: 'prod', sim: '', cmp: null, cmpH: 8, raid: '', raidRoute: '', opt: {} }, ui.calc || {});
+const OPT_DEF = { budget: 500000, tier: 1, baseType: 'trailer', rooms: 2, labs: 1, objective: 'profit', hours: 4, active: 4, check: 15, quality: 'g', crystals: 0, crystalQ: 'u', research: false, goal: 1000000,
+  kinds: { plant: true, repack: true, chem: true }, upgrades: null };
+const optCfg = () => ({ ...OPT_DEF, tier: S.farm.tier, baseType: S.farm.baseType, ...ui.calc.opt, kinds: { ...OPT_DEF.kinds, ...(ui.calc.opt.kinds || {}) } }); // por defecto, lo de tu granja
+let optResult = null;
+const kpi = (icon, label, val, cls = '', title = '') => `<div class="kpi ${cls}"${title ? ` title="${esc(title)}"` : ''}>${ico(icon)}<span><small>${label}</small><b>${val}</b></span></div>`;
+const signMoney = n => n == null || !Number.isFinite(n) ? '—' : (n < 0 ? '−$' : '$') + fmt(Math.abs(n));
+const pct = v => v == null || !Number.isFinite(v) ? '—' : Math.round(v * 100) + '%';
+const best = on => on ? `<span class="badge c-confirmado" title="Mejor en este criterio">${ico('star')}mejor</span>` : '';
+const srcFor = d => d ? `${confBadge(d.conf)}${d.src?.length ? ` <small class="src">${srcLinks(d.src)}</small>` : ''}` : '';
+function showCalc(sub) { if (CALC[sub]) { ui.calc.sub = sub; saveUI(); } if (S.tab !== 'calc') showTab('calc'); else renderCalc(); }
 function renderCalc() {
+  const sub = CALC[ui.calc.sub] ? ui.calc.sub : 'prod';
+  const nav = `<nav class="subnav span" role="tablist" aria-label="Herramientas">${Object.entries(CALC).map(([k, [n, i]]) =>
+    `<button role="tab" data-csub="${k}" aria-selected="${k === sub}">${ico(i)}<span>${n}</span>${k === 'sim' && S.sims.length ? `<em class="cnt n">${S.sims.length}</em>` : k === 'raid' && S.raids.length ? `<em class="cnt n">${S.raids.length}</em>` : ''}</button>`).join('')}</nav>`;
+  const body = sub === 'prod' ? prodHTML() : sub === 'sim' ? simHTML() : sub === 'cmp' ? cmpHTML() : sub === 'opt' ? optHTML() : raidHTML();
+  $('#calcBody').innerHTML = nav + body;
+  if (sub === 'prod') { const tot = RR.farmTotals(S.farm), realH = S.farm.tables.reduce((a, t) => a + (RR.calc(t, S.farm).realPerHour ?? 0), 0);
+    const out = () => { const v = +$('#goalAmt').value || 0; $('#goalOut').innerHTML = tot.perHour > 0 ? kpi('trend', 'Teórico', hrs(v / tot.perHour)) + (realH > 0 ? kpi('chart', 'Real', hrs(v / realH)) : '') : '<small>Sin producción en la granja.</small>'; };
+    $('#goalAmt').oninput = out; out(); }
+}
+// --- Producción (granja real) ---
+function prodHTML() {
   const F = S.farm, r = route(), sum = RR.routeSummary(r, F), tot = RR.farmTotals(F);
   const realH = F.tables.reduce((a, t) => a + (RR.calc(t, F).realPerHour ?? 0), 0), withReal = F.tables.filter(t => t.log.length).length;
   const opts = F.tables.flatMap(t => RR.upgradeOptions(t, F).map(o => ({ ...o, station: t.name }))).sort((a, b) => (a.payback ?? 1e9) - (b.payback ?? 1e9));
-  const cmp = RR.stationComparison(F), simC = RR.calc(sim, F), simInv = RR.investment(sim);
+  const cmp = RR.stationComparison(F);
   const maxGain = Math.max(1, ...opts.map(o => o.gain)), maxCmp = Math.max(1, ...cmp.map(c => c.noData ? 0 : c.perHour));
-  const kpi = (icon, label, val, cls = '') => `<div class="kpi ${cls}">${ico(icon)}<span><small>${label}</small><b>${val}</b></span></div>`;
-  $('#calcBody').innerHTML = `
-  <div class="card span"><div class="card-h">${ico('chart')}<h3>Resumen</h3></div><div class="kpis">
+  return `
+  <div class="card span"><div class="card-h">${ico('chart')}<h3>Resumen de tu granja</h3><small>ruta «${esc(r.name)}»</small></div><div class="kpis">
     ${kpi('trend', 'Teórico', money(tot.perHour) + '/h')}${kpi('play', 'En marcha', money(tot.runningPerHour) + '/h')}
     ${kpi('chart', `Real registrado (${withReal} estación/es)`, withReal ? money(realH) + '/h' : '—')}
     ${kpi('coin', 'Ruta: falta', money(sum.total))}${kpi('hourglass', 'A este ritmo', hrs(sum.etaHours))}</div></div>
@@ -1036,24 +1128,327 @@ function renderCalc() {
     <small>La investigación se paga una vez por wipe y no entra en «se paga en».</small>` : '<div class="empty">Añade estaciones en la Granja para ver qué mejora compensa.</div>'}</div>
   <div class="card"><div class="card-h">${ico('chart')}<h3>Comparador de estaciones</h3><small>notoriedad ${F.notoriety}</small></div><div class="scroll"><table><tr><th>Estación</th><th class="n">$/h</th><th class="n">Compra</th><th class="n">Se paga en</th></tr>
     ${cmp.map(c => `<tr><td class="name">${tile(IC?.kinds[c.kind] || 'task', 'sm k-' + c.kind)}<span>${esc(c.label)}</span></td><td class="n">${c.noData ? 'sin datos' : money(c.perHour)}<div class="mini"><i style="width:${c.noData ? 0 : c.perHour / maxCmp * 100}%"></i></div></td><td class="n">${money(c.investment)}</td><td class="n">${c.noData ? '—' : hrs(c.payback)}</td></tr>`).join('')}</table></div>
-    <small>Mesa con 6 verdes; banco sin mejoras; el laboratorio necesita que apuntes cristales por lote (no hay datos públicos).</small></div>
-  <div class="card"><div class="card-h">${ico('sliders')}<h3>Simulador</h3><small>no se guarda</small></div>
-    <div class="row"><label class="inl">Estación <select id="simKind">${Object.entries(RR.KINDS).map(([k, K]) => `<option value="${k}" ${sim.kind === k ? 'selected' : ''}>${K.label}</option>`).join('')}</select></label></div>
-    <div class="step station k-${sim.kind}" data-sim style="margin-top:.75rem">
-      <div class="upgs">${RR.KINDS[sim.kind].upg.map(k => `<label class="upg">${itemIcon(k, 'sm')}<input type="checkbox" data-t="${k}" ${sim.upg[k] ? 'checked' : ''}> ${esc(itemName(k))}</label>`).join('')}</div>
-      <div class="row body">${stationBody(sim)}</div></div>
-    <div class="kpis mt">${kpi('timer', 'Ciclo', Math.round(simC.cycle) + ' min')}${kpi('trend', 'Por hora', simC.noData ? '—' : money(simC.perHour))}
-      ${kpi('coin', 'Compra', money(simInv))}${kpi('hourglass', 'Se paga en', simC.perHour > 0 ? hrs(simInv / simC.perHour) : '—')}</div></div>`;
-  const out = () => { const v = +$('#goalAmt').value || 0; $('#goalOut').innerHTML = tot.perHour > 0 ? kpi('trend', 'Teórico', hrs(v / tot.perHour)) + (realH > 0 ? kpi('chart', 'Real', hrs(v / realH)) : '') : '<small>Sin producción en la granja.</small>'; };
-  $('#goalAmt').oninput = out; out();
+    <small>Mesa con 6 verdes; banco sin mejoras; el laboratorio necesita que apuntes cristales por lote (no hay datos públicos). Para combinaciones completas usa el <button class="link" data-csub="sim">Simulador</button>.</small></div>`;
 }
+// --- gráficos SVG sin dependencias ---
+const SERIES = ['var(--c1)', 'var(--c2)', 'var(--c3)', 'var(--c4)', 'var(--c5)', 'var(--c6)'];
+function lineChart(series, { label = 'Gráfico', yFmt = signMoney, height = 220, width = 640 } = {}) {
+  const pts = series.flatMap(s => s.pts); if (!pts.length) return '<div class="empty">Sin datos para el gráfico.</div>';
+  const W = width, H = height, P = { l: 70, r: 12, t: 10, b: 26 };
+  const x0 = Math.min(...pts.map(p => p.x)), x1 = Math.max(...pts.map(p => p.x)) || 1;
+  let y0 = Math.min(0, ...pts.map(p => p.y)), y1 = Math.max(0, ...pts.map(p => p.y)); if (y1 === y0) y1 = y0 + 1;
+  const X = x => P.l + (x - x0) / (x1 - x0 || 1) * (W - P.l - P.r), Y = y => P.t + (y1 - y) / (y1 - y0) * (H - P.t - P.b);
+  const ticks = [0, 1, 2, 3, 4].map(i => y0 + (y1 - y0) * i / 4);
+  return `<figure class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">
+    ${ticks.map(v => `<line x1="${P.l}" x2="${W - P.r}" y1="${Y(v)}" y2="${Y(v)}" class="grid"/><text x="${P.l - 6}" y="${Y(v) + 4}" text-anchor="end">${esc(yFmt(v))}</text>`).join('')}
+    <line x1="${P.l}" x2="${W - P.r}" y1="${Y(0)}" y2="${Y(0)}" class="zero"/>
+    ${[x0, (x0 + x1) / 2, x1].map(v => `<text x="${X(v)}" y="${H - 6}" text-anchor="middle">${esc((Math.round(v * 10) / 10).toLocaleString('es'))} h</text>`).join('')}
+    ${series.map((s, i) => `<polyline fill="none" stroke="${s.color || SERIES[i % SERIES.length]}" stroke-width="2.2" ${s.dash ? 'stroke-dasharray="6 5"' : ''} points="${s.pts.map(p => `${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`).join(' ')}"><title>${esc(s.name)}</title></polyline>`).join('')}
+  </svg><figcaption class="legend">${series.map((s, i) => `<span><i style="background:${s.color || SERIES[i % SERIES.length]}${s.dash ? ';opacity:.6' : ''}"></i>${esc(s.name)}</span>`).join('')}</figcaption></figure>`;
+}
+const barList = (rows, fmtV = signMoney) => { const m = Math.max(1, ...rows.map(r => Math.abs(r.v) || 0));
+  return `<div class="bars">${rows.map((r, i) => `<div class="bar-row"><span class="bl" title="${esc(r.name)}">${esc(r.name)}</span><div class="bt"><i style="width:${Math.max(0, Math.abs(r.v) || 0) / m * 100}%;background:${r.color || SERIES[i % SERIES.length]}"></i></div><b>${r.v == null ? '—' : esc(fmtV(r.v))}</b></div>`).join('')}</div>`; };
+// --- Simulador ---
+const curSim = () => S.sims.find(s => s.id === ui.calc.sim) || S.sims[0];
+const issueFixLabel = f => f.kind === 'baseType' ? `Usar ${CAT.bases[f.value]?.name || f.value}` : f.kind === 'rooms' ? `Poner ${f.value} Grow Rooms` : 'Arreglar';
+function simIssueHTML(i) {
+  return `<div class="issue l-${i.level}">${ico(LVL[i.level] || 'info')}<span class="msg">${esc(i.msg)}</span>${i.fix ? `<button data-simfix='${esc(JSON.stringify(i.fix))}'>${esc(issueFixLabel(i.fix))}</button>` : ''}</div>`;
+}
+function simGroupHTML(g) {
+  const K = RR.KINDS[g.kind];
+  return `<article class="step station k-${g.kind}" data-gid="${esc(g.id)}">
+    <header class="st-h">${tile(IC?.kinds[g.kind] || 'task', 'k-' + g.kind)}
+      <div class="col"><small>${K.label}</small><input data-gx="name" value="${esc(g.name)}" maxlength="120" aria-label="Nombre del grupo"></div>
+      <div class="stepper" title="Cuántas estaciones iguales"><button data-gact="dec" aria-label="Una menos">${ico('minus')}</button><input type="number" min="0" max="${RR.LIM.simCount}" data-gx="count" value="${g.count}" aria-label="Cantidad"><button data-gact="inc" aria-label="Una más">${ico('plus')}</button></div>
+      <span class="tools"><button data-gact="del" title="Quitar del escenario" aria-label="Quitar">${ico('trash')}</button></span></header>
+    <div class="upgs">${K.upg.map(k => { const it = CAT.items[k], eff = it?.effect?.speed ?? it?.effect?.freeze ?? 0;
+      return `<label class="upg" title="${esc(it ? itemTip(it) : k)}">${itemIcon(k, 'sm')}<input type="checkbox" data-t="${k}" ${g.upg[k] ? 'checked' : ''}> ${esc(it?.name || k)} <b>+${Math.round(eff * 1000) / 10}%</b></label>`; }).join('')}</div>
+    <div class="row body">${stationBody(g)}<label title="Coste extra por ciclo que pongas tú (semillas, transporte…)">Otros costes/ciclo <input type="number" min="0" step="any" data-gx="opCost" value="${g.opCost}" class="w-m"></label></div>
+  </article>`;
+}
+function simHTML() {
+  const s = curSim();
+  const bar = `<div class="card span toolbar"><div class="row">
+    ${ico('sliders')}<select data-simsel aria-label="Escenario" class="grow" style="max-width:26rem">${S.sims.map(x => `<option value="${esc(x.id)}" ${s && x.id === s.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('') || '<option value="">(sin escenarios)</option>'}</select>
+    <button data-simact="new">${ico('plus')}Nuevo</button><button data-simact="farm" title="Copia la granja de la ruta activa. Tu granja no cambia.">${ico('planter')}Desde mi granja</button>
+    ${s ? `<button data-simact="dup">${ico('copy')}Duplicar</button><button data-simact="ren">${ico('edit')}Renombrar</button><button data-simact="del" class="danger">${ico('trash')}Borrar</button>` : ''}
+  </div><small>Los escenarios son copias de trabajo: simular nunca toca tu granja ni sus temporizadores.</small></div>`;
+  if (!s) return bar + `<div class="empty span">Crea un escenario o cópialo de tu granja para empezar.</div>`;
+  const r = RR.simulate(s), issues = RR.validateSim(s), errs = RR.errorsOf(issues), iv = RR.simIntervals(s);
+  const presets = RR.SIM_HOURS.map(h => `<button class="chip filter" data-sc-h="${h}" aria-pressed="${s.hours === h}">${h} h</button>`).join('');
+  const custom = (key, val, label, extra = '') => `<label class="fld">${label}<input type="number" step="any" min="0" data-sc="${key}" value="${val ?? ''}" ${extra}></label>`;
+  const cust = (k, d) => s[k] !== d ? '<span class="badge c-una-fuente" title="Distinto del valor por defecto del catálogo">personalizado</span>' : '';
+  const editor = `<div class="col sim-ed">
+    <details class="card cfg" open><summary class="card-h" style="margin:0">${ico('timer')}<h3>Tiempo y atención</h3>${ico('chevron', 'chev')}</summary>
+      <div class="chips mt" role="group" aria-label="Duración">${presets}</div>
+      <div class="fgrid mt">${custom('hours', s.hours, 'Duración (h)', 'min="0.25" max="168"')}${custom('active', s.active, 'Horas que atiendes', 'max="168"')}
+        ${custom('check', s.check, 'Revisas cada (min) · 0 = siempre')}</div>
+      <small>Producción efectiva: solo cuentan ciclos completos y una estación parada espera a que vuelvas. Teórica: todo funcionando sin pausa.</small></details>
+    <details class="card cfg"><summary class="card-h" style="margin:0">${ico('house')}<h3>Base y bonificaciones</h3>${ico('chevron', 'chev')}</summary>
+      <div class="fgrid mt">
+        <label class="fld">Base<select data-sc="baseType">${Object.entries(CAT.bases).map(([k, b]) => `<option value="${k}" ${s.baseType === k ? 'selected' : ''}>${esc(b.name)} (${b.workbenches} banco${b.workbenches > 1 ? 's' : ''})</option>`).join('')}</select></label>
+        ${custom('rooms', s.rooms, 'Grow Rooms', 'step="1" min="1"')}
+        <label class="fld">Notoriedad<select data-sc="notoriety">${[1, 2, 3, 4, 5].map(n => `<option ${s.notoriety === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+        <label class="fld">Tier del laptop<select data-sc="tier">${[1, 2, 3].map(n => `<option ${s.tier === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+        ${custom('bonus', s.bonus, 'Bonus extra %')}
+        <label class="fld">Mejoras de velocidad<select data-sc="stacking"><option value="add" ${s.stacking === 'add' ? 'selected' : ''}>Se suman</option><option value="mult" ${s.stacking === 'mult' ? 'selected' : ''}>Se multiplican</option><option value="reduce" ${s.stacking === 'reduce' ? 'selected' : ''}>Restan tiempo</option></select></label>
+      </div>
+      <div class="fgrid mt">${custom('base', s.base, `Ciclo de planta (min) ${cust('base', CAT.defaults.plant_cycle_min.value)}`)}${custom('bags', s.bags, 'Bolsas por planta')}
+        ${custom('pg', s.pg, '<span><i class="dot q-g"></i> Bolsa verde $</span>')}${custom('pp', s.pp, '<span><i class="dot q-p"></i> Bolsa morada $</span>')}${custom('po', s.po, '<span><i class="dot q-o"></i> Bolsa dorada $</span>')}</div></details>
+    <details class="card cfg"><summary class="card-h" style="margin:0">${ico('crate')}<h3>Insumos y objetivo</h3>${ico('chevron', 'chev')}</summary>
+      <div class="fgrid mt">${custom('supplyBox', s.supplyBox, 'Cajas/h que consigues (vacío = sin límite)')}${custom('stockBox', s.stockBox, 'Cajas en reserva')}
+        ${custom('supplyReagent', s.supplyReagent, 'Lotes de reactivos/h (vacío = sin límite)')}${custom('stockReagent', s.stockReagent, 'Lotes en reserva')}
+        ${custom('goal', s.goal, 'Objetivo de dinero $')}<label class="fld"><span>Investigación</span><span class="inl"><input type="checkbox" data-sc="research" ${s.research ? 'checked' : ''}> sumar a la inversión</span></label></div>
+      <small>En el juego no hay cadenas verificadas (lo que produce una estación no alimenta a otra): los bancos y laboratorios gastan insumos comprados. Aquí se lleva su balance para detectar déficit y estaciones paradas.</small></details>
+    <div class="farm-bar card">${['plant', 'repack', 'chem'].map(k => `<button data-simadd="${k}">${tile(IC?.kinds[k] || 'task', 'sm k-' + k)}${esc(RR.KINDS[k].short)}</button>`).join('')}<small class="grow">Añade grupos de estaciones iguales.</small></div>
+    <div class="stations sim-groups">${s.groups.map(simGroupHTML).join('') || '<div class="empty" style="grid-column:1/-1">Sin estaciones en este escenario.</div>'}</div>
+  </div>`;
+  const effVsTh = r.thPerHour > 0 ? r.effPerHour / r.thPerHour : null;
+  const results = `<div class="col sim-res">
+    ${issues.filter(i => i.level !== 'info' || i.fix).map(simIssueHTML).join('')}
+    <div class="card"><div class="card-h">${ico('trend')}<h3>Resultado en ${fmt(r.hours)} h</h3>${errs.length ? '<span class="badge c-pendiente">configuración imposible</span>' : r.noData ? '<span class="badge c-estimado">faltan datos</span>' : '<span class="badge">estimación</span>'}</div>
+      <div class="kpis">
+        ${kpi('coin', 'Beneficio neto efectivo /h', signMoney(r.effPerHour), r.effPerHour >= 0 ? 'ok' : 'warn', 'Ciclos completos teniendo en cuenta cuándo atiendes')}
+        ${kpi('trend', 'Teórico continuo /h', signMoney(r.thPerHour), '', 'Todas las estaciones produciendo sin pausa')}
+        ${kpi('bag', 'Ingresos brutos /h', signMoney(r.grossPerHour))}${kpi('crate', 'Costes de insumos /h', signMoney(r.costPerHour))}
+        ${kpi('money', 'Inversión inicial', money(r.investTotal), '', r.researchCost ? `Incluye ${money(r.researchCost)} de investigación` : 'Compra de estaciones y mejoras (sin investigación)')}
+        ${kpi('hourglass', 'Recuperas la inversión', r.paybackEff == null ? '—' : hrs(r.paybackEff) + (r.paybackExtrapolated ? '*' : ''), '', r.paybackExtrapolated ? 'Más allá de la duración simulada: extrapolado al ritmo efectivo' : '')}
+        ${kpi('chart', `ROI en ${fmt(r.hours)} h`, pct(r.roi))}${kpi('timer', 'Aprovechamiento', pct(effVsTh), effVsTh != null && effVsTh < 0.75 ? 'warn' : '', 'Efectivo frente a teórico')}
+        ${kpi('task', 'Veces que atiendes /h', r.actionsPerHour.toFixed(1))}${kpi('crate', 'Beneficio por estación /h', signMoney(r.perStructure))}
+        ${kpi('flag', `Juntar ${money(s.goal)}`, r.goalHours == null ? '—' : hrs(r.goalHours), '', 'Tras recuperar la inversión, al ritmo efectivo')}
+        ${kpi('play', 'Ciclos (efect. / teór.)', `${fmt(r.cycles)} / ${fmt(Math.floor(r.thCycles))}`)}
+      </div>
+      <small>Estimación con datos de wikis y tus valores: no es una garantía. * = extrapolado.</small></div>
+    <div class="card"><div class="card-h">${ico('chart')}<h3>Beneficio acumulado</h3><small>empieza en −inversión</small></div>
+      ${lineChart([{ name: 'Efectivo (ciclos completos)', pts: r.curve.map(p => ({ x: p.h, y: p.eff })) }, { name: 'Teórico continuo', dash: true, color: 'var(--c2)', pts: r.curve.map(p => ({ x: p.h, y: p.th })) }], { label: 'Beneficio acumulado' })}</div>
+    <div class="card"><div class="card-h">${ico('timer')}<h3>Por duración</h3></div><div class="scroll"><table><tr><th>Horas</th><th class="n">Ciclos</th><th class="n">Neto efectivo</th><th class="n">Teórico</th><th class="n">Efectivo /h</th></tr>
+      ${iv.map(x => `<tr${x.hours === s.hours ? ' class="sel"' : ''}><td>${x.hours} h</td><td class="n">${fmt(x.cycles)}</td><td class="n">${signMoney(x.net)}</td><td class="n">${signMoney(x.th)}</td><td class="n">${signMoney(x.effPerHour)}</td></tr>`).join('')}</table></div>
+      <small>Usa tus horas de atención (${fmt(s.active)} h) y la frecuencia de revisión.</small></div>
+    <div class="card"><div class="card-h">${ico('list')}<h3>Por grupo</h3></div>${r.groups.length ? `<div class="scroll"><table><tr><th>Grupo</th><th class="n">Ciclo</th><th class="n">Ciclos</th><th class="n">Producción</th><th class="n">Neto</th><th class="n">Neto /estación /h</th><th class="n">Inversión</th></tr>
+      ${r.groups.map(g => `<tr><td class="name">${tile(IC?.kinds[g.kind] || 'task', 'sm k-' + g.kind)}<span>${esc(g.name)} ×${g.count}</span></td><td class="n">${Math.round(g.cycle)} min</td><td class="n">${fmt(g.cycles)}</td>
+        <td class="n">${g.noData ? 'sin datos' : `${fmt(g.units)} ${RR.UNIT[g.kind]}`}</td><td class="n">${signMoney(g.gross - g.cost)}</td><td class="n">${signMoney(g.count && r.hours ? (g.gross - g.cost) / g.count / r.hours : 0)}</td><td class="n">${money(g.inv)}</td></tr>`).join('')}</table></div>` : '<div class="empty">Sin estaciones.</div>'}</div>
+    <div class="card"><div class="card-h">${ico('crate')}<h3>Insumos y capacidad</h3></div><div class="kpis">
+      ${kpi('crate', 'Cajas usadas', fmt(r.inputs.box) + (r.shortage.box ? ` · faltan ${fmt(r.shortage.box)}` : ''), r.shortage.box ? 'warn' : '')}
+      ${kpi('flask', 'Lotes de reactivos', fmt(r.inputs.reagent) + (r.shortage.reagent ? ` · faltan ${fmt(r.shortage.reagent)}` : ''), r.shortage.reagent ? 'warn' : '')}
+      ${kpi('factory', 'Bancos de trabajo', `${r.capacity.benches} / ${r.capacity.benchCap}`, r.capacity.benches > r.capacity.benchCap ? 'warn' : '')}
+      ${kpi('planter', 'Mesas', `${r.capacity.tables} / ${r.capacity.tablesCap}`, r.capacity.tables > r.capacity.tablesCap ? 'warn' : '')}
+      ${kpi('plant', 'Plantas', `${r.capacity.bushes} / ${r.capacity.bushCap}`)}
+      ${Object.entries(r.outputs).map(([u, n]) => kpi('bag', `Producido: ${u}`, fmt(n))).join('')}</div></div>
+    <div class="card"><div class="card-h">${ico('warn')}<h3>Cuellos de botella</h3></div>${r.bottlenecks.map(b => `<div class="issue l-${b.level}">${ico(LVL[b.level])}<span class="msg">${esc(b.msg)}</span></div>`).join('') || '<div class="empty">Nada que destacar.</div>'}
+      ${issues.filter(i => i.level === 'info' && !i.fix).map(simIssueHTML).join('')}</div>
+  </div>`;
+  return bar + `<div class="cols2 span">${editor}${results}</div>`;
+}
+// --- Comparador ---
+function cmpHTML() {
+  if (!S.sims.length) return `<div class="card span"><div class="empty">Crea escenarios en el ${'<button class="link" data-csub="sim">Simulador</button>'} para compararlos.</div></div>`;
+  const sel = (ui.calc.cmp || S.sims.map(s => s.id)).filter(id => S.sims.some(s => s.id === id)), H = ui.calc.cmpH || 8;
+  const list = S.sims.filter(s => sel.includes(s.id)), c = RR.compareSims(list, H), B = c.best;
+  const picks = `<div class="card span"><div class="card-h">${ico('compare')}<h3>Escenarios a comparar</h3><small>mismas horas para todos</small></div>
+    <div class="chips">${S.sims.map((s, i) => `<label class="chip filter" aria-pressed="${sel.includes(s.id)}"><input type="checkbox" class="vh" data-cmp="${esc(s.id)}" ${sel.includes(s.id) ? 'checked' : ''}><i class="sw" style="background:${SERIES[i % SERIES.length]}"></i>${esc(s.name)}</label>`).join('')}</div>
+    <div class="chips mt">${RR.SIM_HOURS.map(h => `<button class="chip filter" data-cmph="${h}" aria-pressed="${H === h}">${h} h</button>`).join('')}</div></div>`;
+  if (!list.length) return picks + '<div class="empty span">Marca al menos un escenario.</div>';
+  const color = id => SERIES[S.sims.findIndex(s => s.id === id) % SERIES.length];
+  const rows = c.rows.map(x => `<tr><td class="name"><i class="sw" style="background:${color(x.id)}"></i><span>${esc(x.name)}</span>${x.issues.length ? ` <span class="badge c-pendiente" title="${esc(x.issues[0].msg)}">imposible</span>` : ''}</td>
+    <td class="n">${signMoney(x.r.effPerHour)} ${best(B.profit === x.id)}</td><td class="n">${signMoney(x.r.thPerHour)}</td><td class="n">${money(x.r.investTotal)} ${best(B.invest === x.id)}</td>
+    <td class="n">${x.r.paybackEff == null ? '—' : hrs(x.r.paybackEff)} ${best(B.payback === x.id)}</td><td class="n">${signMoney(x.r.perSlot)} ${best(B.slot === x.id)}</td>
+    <td class="n">${signMoney(x.r.inputCostPerHour)} ${best(B.inputs === x.id)}</td><td class="n">${x.r.actionsPerHour.toFixed(1)} ${best(B.manual === x.id)}</td><td class="n">${pct(x.r.efficiency)}</td></tr>`).join('');
+  return picks + `
+  <div class="card span"><div class="card-h">${ico('list')}<h3>Tabla comparativa · ${H} h</h3></div><div class="scroll"><table class="cmp"><tr><th>Escenario</th><th class="n">Neto efectivo /h</th><th class="n">Teórico /h</th><th class="n">Inversión</th><th class="n">Recuperación</th><th class="n">Por estación /h</th><th class="n">Insumos /h</th><th class="n">Atenciones /h</th><th class="n">Aprovech.</th></tr>${rows}</table></div>
+    <small>Las configuraciones imposibles (límites del juego) no optan a «mejor». Datos estimados: compara, no garantiza.</small></div>
+  <div class="card span"><div class="card-h">${ico('chart')}<h3>Beneficio acumulado</h3><small>efectivo, desde −inversión</small></div>
+    ${lineChart(c.rows.map(x => ({ name: x.name, color: color(x.id), pts: x.r.curve.map(p => ({ x: p.h, y: p.eff })) })), { label: 'Beneficio acumulado por escenario', height: 260, width: 1100 })}</div>
+  <div class="card"><div class="card-h">${ico('coin')}<h3>Neto efectivo /h</h3></div>${barList(c.rows.map(x => ({ name: x.name, v: x.r.effPerHour, color: color(x.id) })))}</div>
+  <div class="card"><div class="card-h">${ico('money')}<h3>Inversión</h3></div>${barList(c.rows.map(x => ({ name: x.name, v: x.r.investTotal, color: color(x.id) })), money)}</div>
+  <div class="card"><div class="card-h">${ico('hourglass')}<h3>Recuperación de la inversión</h3></div>${barList(c.rows.map(x => ({ name: x.name, v: x.r.paybackEff, color: color(x.id) })), hrs)}</div>
+  <div class="card"><div class="card-h">${ico('crate')}<h3>Costes de insumos /h</h3></div>${barList(c.rows.map(x => ({ name: x.name, v: x.r.costPerHour, color: color(x.id) })))}</div>`;
+}
+// --- Optimizador ---
+const OBJ = { profit: 'Máximo beneficio por hora', invest: 'Mínima inversión con beneficio', payback: 'Recuperar la inversión antes', manual: 'Menos intervención manual', space: 'Más beneficio por estación', goal: 'Llegar antes a un objetivo de dinero' };
+function optHTML() {
+  const o = optCfg(), upAll = [...RR.KINDS.plant.upg, ...RR.KINDS.repack.upg, ...RR.KINDS.repack.slotUpg, ...RR.KINDS.chem.upg, 'reactor_2', 'reactor_3'];
+  const allowed = o.upgrades || upAll;
+  const f = (k, label, extra = '') => `<label class="fld">${label}<input type="number" step="any" min="0" data-opt="${k}" value="${o[k] ?? ''}" ${extra}></label>`;
+  const form = `<div class="card"><div class="card-h">${ico('target')}<h3>Restricciones</h3></div>
+    <div class="fgrid">${f('budget', 'Presupuesto $')}
+      <label class="fld">Tier del laptop<select data-opt="tier">${[1, 2, 3].map(n => `<option ${o.tier === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+      <label class="fld">Base<select data-opt="baseType">${Object.entries(CAT.bases).map(([k, b]) => `<option value="${k}" ${o.baseType === k ? 'selected' : ''}>${esc(b.name)} (${b.workbenches})</option>`).join('')}</select></label>
+      ${f('rooms', 'Grow Rooms', 'step="1" min="1"')}${f('labs', 'Laboratorios posibles', 'step="1"')}
+      <label class="fld">Objetivo<select data-opt="objective">${Object.entries(OBJ).map(([k, n]) => `<option value="${k}" ${o.objective === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+      ${o.objective === 'goal' ? f('goal', 'Objetivo $') : ''}${f('hours', 'Horas a simular')}${f('active', 'Horas que atiendes')}${f('check', 'Revisas cada (min)')}
+      <label class="fld">Calidad de las plantas<select data-opt="quality">${Object.entries(RR.QUAL).map(([k, n]) => `<option value="${k}" ${o.quality === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+      ${f('crystals', 'Cristales por lote (lab)', 'step="1"')}
+      <label class="fld">Calidad de cristales<select data-opt="crystalQ">${Object.entries(RR.CRYSTAL).map(([k, n]) => `<option value="${k}" ${o.crystalQ === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+      <label class="fld"><span>Investigación</span><span class="inl"><input type="checkbox" data-opt="research" ${o.research ? 'checked' : ''}> contarla en el presupuesto</span></label></div>
+    <div class="mt"><small>Estaciones desbloqueadas</small><div class="chips mt">${['plant', 'repack', 'chem'].map(k => `<label class="chip filter" aria-pressed="${o.kinds[k] !== false}"><input type="checkbox" class="vh" data-optk="${k}" ${o.kinds[k] !== false ? 'checked' : ''}>${ico(IC?.kinds[k] || 'task')}${esc(RR.KINDS[k].short)}</label>`).join('')}</div></div>
+    <div class="mt"><small>Mejoras disponibles (las de tier superior al tuyo no se usan)</small><div class="chips mt">${upAll.map(k => { const it = CAT.items[k], lock = (it?.tier || 1) > o.tier;
+      return `<label class="chip filter" aria-pressed="${!lock && allowed.includes(k)}" title="${esc(it ? itemTip(it) : k)}"${lock ? ' data-locked' : ''}><input type="checkbox" class="vh" data-optu="${k}" ${allowed.includes(k) ? 'checked' : ''} ${lock ? 'disabled' : ''}>${itemIcon(k, 'sm')}${esc(it?.name || k)}</label>`; }).join('')}</div></div>
+    <div class="row mt"><button class="primary" data-optrun>${ico('search')}Buscar combinaciones</button><small class="grow">Busca entre las combinaciones válidas (huecos de la base, Grow Rooms, presupuesto y tier) sin bloquear la ventana.</small></div></div>`;
+  const R = optResult;
+  const res = !R ? '<div class="card"><div class="empty">Pulsa «Buscar combinaciones».</div></div>' : R.busy ? '<div class="card"><div class="empty">Calculando…</div></div>' : `
+    <div class="card"><div class="card-h">${ico('star')}<h3>Recomendaciones · ${esc(OBJ[R.objective] || '')}</h3><small>${fmt(R.evals)} combinaciones en ${R.ms} ms</small></div>
+      ${R.notes.map(n => `<div class="issue l-info">${ico('info')}<span class="msg">${esc(n)}</span></div>`).join('')}
+      ${R.results.length ? R.results.map((x, i) => `<article class="opt-res ${i === 0 ? 'top' : ''}">
+        <div class="row"><span class="rank">#${i + 1}</span><b class="grow">${x.groups.map(g => `${g.count}× ${esc(RR.KINDS[g.kind].short)}`).join(' + ')}</b>
+          <button data-optuse="${i}">${ico('plus')}Crear escenario</button></div>
+        <div class="row chips mt">${x.groups.map(g => `<span class="chip">${tile(IC?.kinds[g.kind] || 'task', 'sm k-' + g.kind)}<span>${g.count}× ${esc(RR.KINDS[g.kind].short)}${[...RR.KINDS[g.kind].upg.filter(k => g.upg[k]), g.box].filter(Boolean).map(k => ' · ' + esc(itemName(k))).join('')}${g.kind === 'chem' ? ' · reactor ' + g.reactor : ''}</span></span>`).join('')}</div>
+        <p class="why">${esc(x.why)}</p>
+        <div class="kpis sm">${kpi('coin', 'Neto efectivo /h', signMoney(x.net))}${kpi('trend', 'Teórico /h', signMoney(x.th))}${kpi('money', 'Inversión', money(x.inv))}
+          ${kpi('hourglass', 'Recuperación', hrs(x.payback))}${kpi('task', 'Atenciones /h', x.actions.toFixed(1))}${R.objective === 'goal' ? kpi('flag', 'Llegar al objetivo', hrs(x.goalHours)) : ''}</div>
+        ${x.requires.length || x.research.length ? `<small>Requisitos: ${[...x.requires.map(itemName), ...x.research.filter(id => CAT.items[id]?.research).map(id => 'investigar ' + itemName(id))].map(esc).join(' · ')}</small>` : ''}
+      </article>`).join('') : '<div class="empty">Ninguna combinación cabe en el presupuesto y los límites. Sube el presupuesto o desbloquea más estaciones.</div>'}
+    </div>`;
+  return `<div class="cols2 span"><div class="col">${form}</div><div class="col">${res}</div></div>`;
+}
+function runOptimizer() {
+  const o = optCfg(); optResult = { busy: true }; renderCalc();
+  setTimeout(() => { // deja pintar «Calculando…» antes; la búsqueda está acotada (maxEval)
+    try { optResult = { ...RR.optimize({ ...o, start: o.budget, maxEval: 300000 }), objective: o.objective, cfg: o }; }
+    catch (e) { optResult = null; toast('No se pudo calcular: ' + e.message, 'error'); }
+    renderCalc();
+  }, 30);
+}
+// --- Raideos ---
+const curRaid = () => S.raids.find(r => r.id === ui.calc.raid) || S.raids[0];
+const RST = () => CAT.raid?.structures || {};
+const decIco = k => `<span class="tile sm r-${k}" style="--kc:var(--r-${k})">${ico('chip')}</span>`;
+function raidHTML() {
+  const R = curRaid(), RD = CAT.raid || {};
+  const bar = `<div class="card span toolbar"><div class="row">
+    ${ico('chip')}<select data-raidsel aria-label="Base objetivo" class="grow" style="max-width:26rem">${S.raids.map(x => `<option value="${esc(x.id)}" ${R && x.id === R.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('') || '<option value="">(sin bases)</option>'}</select>
+    <button data-raidact="new">${ico('plus')}Nueva base</button>
+    ${R ? `<button data-raidact="dup">${ico('copy')}Duplicar</button><button data-raidact="ren">${ico('edit')}Renombrar</button><button data-raidact="del" class="danger">${ico('trash')}Borrar</button>` : ''}
+  </div><small>Reconstruye a mano lo que sabes de la base: estructuras, fusibles y cajas fuertes. Nada se lee del juego.</small></div>`;
+  if (!R) return bar + '<div class="empty span">Crea una base objetivo para calcular cuántos decodificadores necesitas.</div>';
+  const routeSel = R.routes.some(p => p.id === ui.calc.raidRoute) ? ui.calc.raidRoute : '';
+  const plan = RR.raidPlan(R, routeSel || null), cmp = RR.compareRaidRoutes(R), D = RD.decoders || {};
+  const structCard = (s, i) => { const inf = RR.structInfo(s), used = s.fu + s.fe + s.fl, row = plan.rows.find(x => x.id === s.id);
+    const fuse = (k, t) => `<label class="fuse r-${t}" title="Fusible ${({ u: 'Uncommon +1', e: 'Epic +3', l: 'Legendary +5' })[t]}">${decIco(t)}<input type="number" min="0" step="1" data-rs="${k}" value="${s[k]}" class="w-s" aria-label="Fusibles ${t}"></label>`;
+    return `<article class="raid-s" data-rsid="${esc(s.id)}">
+      <div class="row"><span class="num">${i + 1}</span>${tile(IC?.raid?.[s.kind] || 'shield', 'k-def')}
+        <select data-rs="kind" aria-label="Tipo de estructura">${Object.entries(RST()).map(([k, v]) => `<option value="${k}" ${s.kind === k ? 'selected' : ''}>${esc(v.name)}</option>`).join('')}<option value="custom" ${s.kind === 'custom' ? 'selected' : ''}>Otra (defensa a mano)</option></select>
+        ${s.kind === 'custom' ? `<input data-rs="name" value="${esc(s.name)}" placeholder="Nombre" class="w-m"><label class="inl">Defensa <input type="number" min="0" data-rs="defense" value="${s.defense}" class="w-s"></label>` : ''}
+        <span class="badge" title="Defensa total de su Security System">${ico('shield')}${row ? row.defense : RR.structDefense(s)}</span>${confBadge(inf.conf)}
+        <span class="tools"><button data-rsact="up" aria-label="Subir">${ico('up')}</button><button data-rsact="down" aria-label="Bajar">${ico('down')}</button><button data-rsact="dup" aria-label="Duplicar">${ico('copy')}</button><button data-rsact="del" aria-label="Quitar">${ico('trash')}</button></span></div>
+      <div class="row mt"><small>Fusibles (${used}/${inf.fuseSlots}):</small>${fuse('fu', 'u')}${fuse('fe', 'e')}${fuse('fl', 'l')}
+        <label class="inl" title="${esc(RD.settlementBonus?.notes || '')}"><input type="checkbox" data-rs="bonus" ${s.bonus ? 'checked' : ''}> +${RD.settlementBonus?.value || 3} bunker</label>
+        <label class="inl" title="Cajas fuertes y Security Cabinets: necesitan Master Key">${ico('safe')}Cajas fuertes <input type="number" min="0" step="1" data-rs="safes" value="${s.safes}" class="w-s"></label></div>
+      ${row ? `<small class="plan">Plan: ${['l', 'e', 'u'].filter(k => row.use[k]).map(k => `${row.use[k]} ${D[k]?.name.replace('Decoder ', '')} tuyos`).concat(['l', 'e', 'u'].filter(k => row.miss[k]).map(k => `<b class="l-warn">${row.miss[k]} ${D[k]?.name.replace('Decoder ', '')} que faltan</b>`)).join(' + ') || 'nada'}${row.waste ? ` · sobran ${row.waste} punto(s)` : ''} · ${Math.round(row.seconds)} s</small>` : '<small>Fuera de la ruta elegida.</small>'}
+    </article>`; };
+  const v = k => R.values[k] ?? '';
+  const editor = `<div class="col">
+    <div class="card"><div class="card-h">${ico('shield')}<h3>Estructuras de la base</h3><small>en orden de paso</small></div>
+      <div class="col" style="gap:.5rem">${R.structs.map(structCard).join('') || '<div class="empty">Añade la valla, la casa y lo que quieras abrir.</div>'}</div>
+      <div class="row mt"><select data-raidadd aria-label="Añadir estructura"><option value="">+ Añadir estructura…</option>${Object.entries(RST()).map(([k, x]) => `<option value="${k}">${esc(x.name)} · defensa ${x.defense}, ${x.fuseSlots} huecos</option>`).join('')}<option value="custom">Otra (defensa a mano)</option></select></div></div>
+    <div class="card"><div class="card-h">${ico('crate')}<h3>Tu inventario y precios</h3></div>
+      <div class="fgrid">${['u', 'e', 'l'].map(k => `<label class="fld"><span>${decIco(k)} ${esc(D[k]?.name || k)} (${D[k]?.points} pt)</span><input type="number" min="0" step="1" data-rinv="${k}" value="${R.inv[k]}"></label>`).join('')}
+        ${['u', 'e', 'l'].map(k => `<label class="fld" title="Valor para calcular el coste. Por defecto: lo que paga el Fence (${money(D[k]?.value || 0)})">Valor ${esc(D[k]?.name.replace('Decoder ', '') || k)} $<input type="number" min="0" data-rval="${k}" value="${v(k)}" placeholder="${D[k]?.value}"></label>`).join('')}
+        <label class="fld">Los que falten, consíguelos como<select data-rf="buy">${['e', 'u', 'l'].map(k => `<option value="${k}" ${R.buy === k ? 'selected' : ''}>${esc(D[k]?.name || k)}</option>`).join('')}</select></label>
+        <label class="fld"><span>Trueque Epic</span><span class="inl"><input type="checkbox" data-rf="barter" ${R.barter ? 'checked' : ''}> 3 Uncommon + $10.000</span></label>
+        <label class="fld">Reserva extra %<input type="number" min="0" max="500" data-rf="reserve" value="${R.reserve}"></label>
+        <label class="fld">${ico('key')} Master Keys que tienes<input type="number" min="0" step="1" data-rf="keys" value="${R.keys}"></label>
+        <label class="fld">Coste de una Master Key $<input type="number" min="0" data-rf="keyCost" value="${R.keyCost}" placeholder="no publicado"></label></div>
+      <small>Los decodificadores no se venden en tiendas: el coste se calcula con su valor de venta al Fence (o el que pongas). ${srcFor(D.e)}</small></div>
+    <div class="card"><div class="card-h">${ico('route')}<h3>Rutas de entrada</h3><button data-raidact="route">${ico('plus')}Ruta</button></div>
+      ${R.routes.length ? R.routes.map(p => `<div class="raid-route" data-rpid="${esc(p.id)}"><div class="row"><input data-rp="name" value="${esc(p.name)}" class="grow" aria-label="Nombre de la ruta"><button data-rpact="del" class="ghost" aria-label="Borrar ruta">${ico('trash')}</button></div>
+        <div class="chips mt">${R.structs.map((s, i) => `<button class="chip filter" data-rptoggle="${esc(s.id)}" aria-pressed="${p.steps.includes(s.id)}">${i + 1}. ${esc(s.name || RR.structInfo(s).name)}</button>`).join('')}</div></div>`).join('')
+      : '<small>Si la base tiene varios accesos, crea una ruta por acceso y marca qué estructuras hay que abrir en cada una.</small>'}</div>
+  </div>`;
+  const tot = plan.tot, all = k => tot.use[k] + plan.missing[k];
+  const finSim = S.sims.find(x => x.id === R.finance), rate = finSim ? RR.simulate(finSim).effPerHour : RR.farmTotals(S.farm).perHour;
+  const results = `<div class="col">
+    ${R.routes.length ? `<div class="card"><div class="row"><span>${ico('route')} Calcular para</span><select data-raidroute class="grow"><option value="">Todas las estructuras</option>${R.routes.map(p => `<option value="${esc(p.id)}" ${routeSel === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div></div>` : ''}
+    <div class="card"><div class="card-h">${ico('chip')}<h3>Decodificadores necesarios</h3>${plan.feasible ? '<span class="badge c-confirmado">te llega con lo que tienes</span>' : '<span class="badge c-estimado">te faltan</span>'}</div>
+      <div class="kpis">${['u', 'e', 'l'].map(k => kpi('chip', `${D[k]?.name.replace('Decoder ', '')} (${D[k]?.points} pt)`, `${all(k)}${plan.missing[k] ? ` · faltan ${plan.missing[k]}` : ''}`, plan.missing[k] ? 'warn' : '')).join('')}
+        ${kpi('shield', 'Defensa total', fmt(tot.defense))}${kpi('star', 'Mínimo teórico', fmt(plan.minTheoretical), '', 'Si todo fueran Legendary (5 pt)')}
+        ${kpi('plus', `Reserva (${R.reserve}%)`, `${plan.reserve} ${D[plan.reserveType]?.name.replace('Decoder ', '') || ''}`)}
+        ${kpi('timer', 'Tiempo hackeando', `${Math.round(plan.seconds / 60 * 10) / 10} min`, '', `${CAT.raid?.secondsPerDecoder?.value || 12} s por decodificador`)}
+        ${kpi('key', 'Master Keys', `${tot.safes}${plan.keysMissing ? ` · faltan ${plan.keysMissing}` : ''}`, plan.keysMissing ? 'warn' : '')}</div>
+      <div class="kpis mt">${kpi('money', 'Coste total del raideo', money(plan.total), '', 'Valor de lo que gastas de tu inventario + lo que tienes que conseguir')}
+        ${kpi('coin', 'Dinero extra (con tu inventario)', money(plan.extra))}
+        ${plan.materials ? kpi('hammer', 'Materiales del trueque', `${plan.materials.u} U + ${money(plan.materials.cash)}`, '', `${plan.materials.u} Decoders Uncommon y ${money(plan.materials.cash)} en la Suspicious Door`) : ''}</div>
+      <small>Sin azar conocido: el consumo esperado es el del plan. Conservador = plan + reserva. ${srcFor(CAT.raid?.secondsPerDecoder)}</small></div>
+    <div class="card"><div class="card-h">${ico('list')}<h3>Desglose</h3></div>${plan.rows.length ? `<div class="scroll"><table><tr><th>Estructura</th><th class="n">Defensa</th><th class="n">Tuyos</th><th class="n">Faltan</th><th class="n">Sobran pt</th><th class="n">Tiempo</th><th class="n">Coste</th></tr>
+      ${plan.rows.map(x => `<tr><td class="name">${tile(IC?.raid?.[x.kind] || 'shield', 'sm k-def')}<span>${esc(x.name)}</span></td><td class="n">${x.defense}</td>
+        <td class="n">${['l', 'e', 'u'].filter(k => x.use[k]).map(k => `${x.use[k]}${k.toUpperCase()}`).join(' ') || '—'}</td><td class="n">${['l', 'e', 'u'].filter(k => x.miss[k]).map(k => `${x.miss[k]}${k.toUpperCase()}`).join(' ') || '—'}</td>
+        <td class="n">${x.waste}</td><td class="n">${Math.round(x.seconds)} s</td><td class="n">${money(x.cost)}</td></tr>`).join('')}</table></div>` : '<div class="empty">Sin estructuras en la ruta.</div>'}</div>
+    ${cmp.rows.length > 1 ? `<div class="card"><div class="card-h">${ico('compare')}<h3>Comparar rutas</h3></div><div class="scroll"><table><tr><th>Ruta</th><th class="n">Decodificadores</th><th class="n">Coste</th><th class="n">Tiempo</th><th>Con tu inventario</th></tr>
+      ${cmp.rows.map(x => { const p = x.plan, n = ['u', 'e', 'l'].reduce((a, k) => a + p.tot.use[k] + p.missing[k], 0);
+        return `<tr><td>${esc(x.name)}</td><td class="n">${n} ${best(cmp.best.decoders === x.id)}</td><td class="n">${money(p.total)} ${best(cmp.best.cost === x.id)}</td><td class="n">${Math.round(p.seconds)} s ${best(cmp.best.time === x.id)}</td>
+          <td>${p.feasible ? '<span class="badge c-confirmado">sí</span>' : '<span class="badge c-estimado">faltan</span>'}</td></tr>`; }).join('')}</table></div></div>` : ''}
+    <div class="card"><div class="card-h">${ico('coin')}<h3>¿Compensa?</h3><small>opcional</small></div>
+      <div class="fgrid"><label class="fld">Valor estimado del botín $<input type="number" min="0" data-rf="loot" value="${R.loot || ''}" placeholder="lo que crees que hay"></label>
+        <label class="fld">Financiarlo con<select data-rf="finance"><option value="">Mi granja (${money(RR.farmTotals(S.farm).perHour)}/h teórico)</option>${S.sims.map(x => `<option value="${esc(x.id)}" ${R.finance === x.id ? 'selected' : ''}>Escenario: ${esc(x.name)}</option>`).join('')}</select></label></div>
+      <div class="kpis mt">${kpi('hourglass', 'Horas de farmeo para pagarlo', rate > 0 ? hrs(plan.total / rate) : '—', '', finSim ? 'Al ritmo efectivo del escenario' : 'Al ritmo teórico de tu granja')}
+        ${plan.lootProfit ? kpi('coin', 'Beneficio o pérdida', signMoney(plan.lootProfit.profit), plan.lootProfit.profit >= 0 ? 'ok' : 'warn') + kpi('chart', 'Rentabilidad', pct(plan.lootProfit.roi)) + kpi('flag', 'Punto de equilibrio', money(plan.lootProfit.breakeven)) : ''}</div></div>
+    <div class="card"><div class="card-h">${ico('warn')}<h3>Datos sin confirmar</h3></div>${plan.warnings.map(w => `<div class="issue l-warn">${ico('warn')}<span class="msg">${esc(w)}</span></div>`).join('')}
+      <small>Fuentes: ${srcFor(RD.formula)}</small></div>
+  </div>`;
+  return bar + `<div class="cols2 span">${editor}${results}</div>`;
+}
+// --- eventos del centro de herramientas ---
+const numOrNull = v => v === '' ? null : +v;
+$('#tab-calc').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.csub) return showCalc(b.dataset.csub);
+  const s = curSim(), R = curRaid();
+  const act = b.dataset.simact;
+  if (act === 'new') return commit(st => { const n = RR.ops.addSim(st, 'Escenario ' + (st.sims.length + 1)); ui.calc.sim = n.id; saveUI(); }, { ok: 'Escenario creado.' });
+  if (act === 'farm') return commit(st => { const n = RR.ops.addSimFromFarm(st); ui.calc.sim = n.id; saveUI(); }, { ok: 'Escenario creado con tu granja. Tu granja no cambia.' });
+  if (act === 'dup' && s) return commit(st => { const n = RR.ops.dupSim(st, s.id); ui.calc.sim = n.id; saveUI(); }, { ok: 'Escenario duplicado.' });
+  if (act === 'ren' && s) { const n = prompt('Nombre del escenario', s.name); if (n?.trim()) commit(st => RR.ops.setSim(st, s.id, 'name', n)); return; }
+  if (act === 'del' && s) { if (confirm(`¿Borrar el escenario «${s.name}»? Tu granja no se toca. Puedes deshacerlo.`)) commit(st => RR.ops.delSim(st, s.id), { ok: 'Escenario borrado.' }); return; }
+  if (b.dataset.simadd && s) return commit(st => RR.ops.addSimGroup(st, s.id, b.dataset.simadd));
+  if (b.dataset.scH && s) return commit(st => { RR.ops.setSim(st, s.id, 'hours', +b.dataset.scH); });
+  if (b.dataset.simfix && s) { const f = JSON.parse(b.dataset.simfix); return commit(st => RR.ops.setSim(st, s.id, f.kind, f.value), { ok: 'Arreglado.' }); }
+  const gid = b.closest('[data-gid]')?.dataset.gid;
+  if (gid && s && b.dataset.gact) { const g = s.groups.find(x => x.id === gid);
+    if (b.dataset.gact === 'del') return commit(st => RR.ops.delSimGroup(st, s.id, gid), { ok: 'Grupo quitado.' });
+    return commit(st => RR.ops.setSimGroup(st, s.id, gid, 'count', g.count + (b.dataset.gact === 'inc' ? 1 : -1))); }
+  if (b.dataset.cmph) { ui.calc.cmpH = +b.dataset.cmph; saveUI(); return renderCalc(); }
+  if (b.dataset.optrun !== undefined) return runOptimizer();
+  if (b.dataset.optuse !== undefined && optResult?.results) { const x = optResult.results[+b.dataset.optuse], o = optResult.cfg;
+    return commit(st => { const n = RR.ops.addSimFromPlan(st, `Optimizador #${+b.dataset.optuse + 1}`, { ...o, groups: [] }, x.groups); ui.calc.sim = n.id; ui.calc.sub = 'sim'; saveUI(); }, { ok: 'Escenario creado desde la recomendación.' }); }
+  const ra = b.dataset.raidact;
+  if (ra === 'new') { const n = prompt('Nombre de la base objetivo', 'Base ' + (S.raids.length + 1)); if (n?.trim()) commit(st => { const r = RR.ops.addRaid(st, n); ui.calc.raid = r.id; saveUI(); }, { ok: 'Base creada.' }); return; }
+  if (ra === 'dup' && R) return commit(st => { const r = RR.ops.dupRaid(st, R.id); ui.calc.raid = r.id; saveUI(); }, { ok: 'Base duplicada.' });
+  if (ra === 'ren' && R) { const n = prompt('Nombre de la base', R.name); if (n?.trim()) commit(st => RR.ops.setRaid(st, R.id, 'name', n)); return; }
+  if (ra === 'del' && R) { if (confirm(`¿Borrar «${R.name}» con sus estructuras y rutas? Puedes deshacerlo.`)) commit(st => RR.ops.delRaid(st, R.id), { ok: 'Base borrada.' }); return; }
+  if (ra === 'route' && R) return commit(st => RR.ops.addRaidRoute(st, R.id));
+  const sid = b.closest('[data-rsid]')?.dataset.rsid;
+  if (sid && R && b.dataset.rsact) { const a = b.dataset.rsact;
+    if (a === 'del') return commit(st => RR.ops.delRaidStruct(st, R.id, sid), { ok: 'Estructura quitada.' });
+    if (a === 'dup') return commit(st => RR.ops.dupRaidStruct(st, R.id, sid));
+    return commit(st => RR.ops.moveRaidStruct(st, R.id, sid, a === 'up' ? -1 : 1)); }
+  const pid = b.closest('[data-rpid]')?.dataset.rpid;
+  if (pid && R) { if (b.dataset.rpact === 'del') return commit(st => RR.ops.delRaidRoute(st, R.id, pid), { ok: 'Ruta borrada.' });
+    if (b.dataset.rptoggle) return commit(st => RR.ops.setRaidRoute(st, R.id, pid, 'toggle', b.dataset.rptoggle)); }
+});
 $('#tab-calc').addEventListener('change', e => {
-  const el = e.target;
-  if (el.id === 'simKind') { sim = RR.normStation({ kind: el.value, g: el.value === 'plant' ? 6 : 0 }); return renderCalc(); }
-  if (!el.closest('[data-sim]') || !el.dataset.t) return;
-  const st = { farm: S.farm, routes: [], cur: '' }; st.farm = { ...S.farm, tables: [sim] };
-  const f = el.dataset.t, v = el.type === 'checkbox' ? el.checked : el.tagName === 'SELECT' && f !== 'box' && f !== 'quality' ? +el.value : el.type === 'number' ? +el.value : el.value;
-  RR.ops.setStation(st, sim.id, f, v); sim = st.farm.tables[0]; renderCalc();
+  const el = e.target, s = curSim(), R = curRaid();
+  const val = () => el.type === 'checkbox' ? el.checked : el.type === 'number' ? (el.value === '' ? '' : +el.value) : el.value;
+  if (el.dataset.simsel !== undefined) { ui.calc.sim = el.value; saveUI(); return renderCalc(); }
+  if (el.dataset.sc && s) return commit(st => RR.ops.setSim(st, s.id, el.dataset.sc, ['supplyBox', 'supplyReagent'].includes(el.dataset.sc) ? numOrNull(el.value) : val()));
+  const gid = el.closest('[data-gid]')?.dataset.gid;
+  if (gid && s && (el.dataset.gx || el.dataset.t)) { const f = el.dataset.gx || el.dataset.t;
+    const v = el.type === 'checkbox' ? el.checked : el.tagName === 'SELECT' && f !== 'box' && f !== 'quality' ? +el.value : el.type === 'number' ? +el.value : el.value;
+    return commit(st => RR.ops.setSimGroup(st, s.id, gid, f, v)); }
+  if (el.dataset.cmp) { const cur = (ui.calc.cmp || S.sims.map(x => x.id)).filter(id => id !== el.dataset.cmp); ui.calc.cmp = el.checked ? [...cur, el.dataset.cmp] : cur; saveUI(); return renderCalc(); }
+  if (el.dataset.opt) { ui.calc.opt = { ...ui.calc.opt, [el.dataset.opt]: el.type === 'checkbox' ? el.checked : ['baseType', 'objective', 'quality', 'crystalQ'].includes(el.dataset.opt) ? el.value : +el.value }; saveUI(); optResult = null; return renderCalc(); }
+  if (el.dataset.optk) { ui.calc.opt = { ...ui.calc.opt, kinds: { ...optCfg().kinds, [el.dataset.optk]: el.checked } }; saveUI(); optResult = null; return renderCalc(); }
+  if (el.dataset.optu) { const all = optCfg().upgrades || [...RR.KINDS.plant.upg, ...RR.KINDS.repack.upg, ...RR.KINDS.repack.slotUpg, ...RR.KINDS.chem.upg, 'reactor_2', 'reactor_3'];
+    ui.calc.opt = { ...ui.calc.opt, upgrades: el.checked ? [...new Set([...all, el.dataset.optu])] : all.filter(k => k !== el.dataset.optu) }; saveUI(); optResult = null; return renderCalc(); }
+  if (el.dataset.raidsel !== undefined) { ui.calc.raid = el.value; ui.calc.raidRoute = ''; saveUI(); return renderCalc(); }
+  if (el.dataset.raidroute !== undefined) { ui.calc.raidRoute = el.value; saveUI(); return renderCalc(); }
+  if (el.dataset.raidadd !== undefined && R && el.value) return commit(st => RR.ops.addRaidStruct(st, R.id, el.value));
+  if (!R) return;
+  if (el.dataset.rf) return commit(st => RR.ops.setRaid(st, R.id, el.dataset.rf, val()));
+  if (el.dataset.rinv) return commit(st => RR.ops.setRaid(st, R.id, 'inv', { ...R.inv, [el.dataset.rinv]: +el.value || 0 }));
+  if (el.dataset.rval) return commit(st => RR.ops.setRaid(st, R.id, 'values', { ...R.values, [el.dataset.rval]: el.value === '' ? null : +el.value }));
+  const sid = el.closest('[data-rsid]')?.dataset.rsid;
+  if (sid && el.dataset.rs) return commit(st => RR.ops.setRaidStruct(st, R.id, sid, el.dataset.rs, val()));
+  const pid = el.closest('[data-rpid]')?.dataset.rpid;
+  if (pid && el.dataset.rp) return commit(st => RR.ops.setRaidRoute(st, R.id, pid, el.dataset.rp, el.value));
 });
 
 // ---------- DATOS DEL JUEGO ----------
@@ -1143,7 +1538,7 @@ setTimeout(() => checkUpdate(false), 3000);
 $('#ver').textContent = `v${RR.APP_VERSION} · datos ${CAT.version}`;
 renderNotices();
 showTab(S.tab);
-window.RRApp = { get S() { return S; }, commit, undo, redo, render, showTab, backups, pushBackup, restoreFull, load }; // para pruebas
+window.RRApp = { get S() { return S; }, commit, undo, redo, render, showTab, showCalc, backups, pushBackup, restoreFull, load }; // para pruebas
 </script>
 </body>
 </html>

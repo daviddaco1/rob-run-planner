@@ -40,7 +40,10 @@ test('propiedad: los ciclos de dependencias siempre se detectan', () => {
 
 test('propiedad: secuencias aleatorias de operaciones mantienen el estado válido y recuperable', () => {
   const OPS = ['addStep', 'deleteStep', 'duplicateStep', 'moveStep', 'moveBefore', 'setStep', 'addSub', 'setSub', 'delSub', 'newRoute', 'newWipe',
-    'duplicateRoute', 'deleteRoute', 'setRoute', 'setCur', 'addStation', 'deleteStation', 'setStation', 'startStation', 'stopStation', 'logHarvest', 'setFarm', 'applyFix'];
+    'duplicateRoute', 'deleteRoute', 'setRoute', 'setCur', 'addStation', 'deleteStation', 'setStation', 'startStation', 'stopStation', 'logHarvest', 'setFarm', 'applyFix',
+    'addSim', 'addSimFromFarm', 'setSim', 'dupSim', 'delSim', 'addSimGroup', 'setSimGroup', 'delSimGroup',
+    'addRaid', 'setRaid', 'dupRaid', 'delRaid', 'addRaidStruct', 'setRaidStruct', 'dupRaidStruct', 'moveRaidStruct', 'delRaidStruct', 'addRaidRoute', 'setRaidRoute', 'delRaidRoute'];
+  const STRUCTS = ['trailer', 'small_house', 'mansion', 'concrete_fence', 'custom', 'nope'];
   const FIELDS = ['type', 'phase', 'text', 'target', 'progress', 'done', 'q', 'down', 'item', 'requires', 'notes'];
   for (let seed = 1; seed <= 300; seed++) {
     const r = rng(seed);
@@ -73,6 +76,35 @@ test('propiedad: secuencias aleatorias de operaciones mantienen el estado válid
           case 'logHarvest': st && RR.ops.logHarvest(S, st.id, any(), r.int(1, 1e12)); break;
           case 'setFarm': RR.ops.setFarm(S, r.pick(['base', 'bags', 'bonus', 'pg', 'stacking', 'tier', 'notoriety', 'baseType']), r.bool() ? any() : r.int(0, 9)); break;
           case 'applyFix': { const i = RR.validateRoute(route, S.farm).find(x => x.fix); i && RR.ops.applyFix(S, i.fix); break; }
+          default: {
+            const farmBefore = JSON.stringify([S.farm, S.farms]), sim = S.sims.length ? r.pick(S.sims) : null, g = sim?.groups.length ? r.pick(sim.groups) : null;
+            const raid = S.raids.length ? r.pick(S.raids) : null, rs = raid?.structs.length ? r.pick(raid.structs) : null, rr = raid?.routes.length ? r.pick(raid.routes) : null;
+            const v = () => r.bool() ? any() : r.pick([0, 1, 3, 7, 50, -2, 1e9, '', null, 'workshop', 'e', 'tool_box_e']);
+            switch (op) {
+              case 'addSim': RR.ops.addSim(S, String(any())); break;
+              case 'addSimFromFarm': RR.ops.addSimFromFarm(S); break;
+              case 'setSim': sim && RR.ops.setSim(S, sim.id, r.pick(['name', 'hours', 'active', 'check', 'baseType', 'rooms', 'supplyBox', 'supplyReagent', 'stockBox', 'notoriety', 'tier', 'research', 'goal', 'groups', 'id']), v()); break;
+              case 'dupSim': sim && RR.ops.dupSim(S, sim.id); break;
+              case 'delSim': sim && RR.ops.delSim(S, sim.id); break;
+              case 'addSimGroup': sim && RR.ops.addSimGroup(S, sim.id, r.pick(['plant', 'repack', 'chem', 'x'])); break;
+              case 'setSimGroup': g && RR.ops.setSimGroup(S, sim.id, g.id, r.pick(['count', 'g', 'p', 'o', 'fan', 'box', 'sell', 'cost', 'reactor', 'crystals', 'opCost', 'name']), v()); break;
+              case 'delSimGroup': g && RR.ops.delSimGroup(S, sim.id, g.id); break;
+              case 'addRaid': RR.ops.addRaid(S, String(any())); break;
+              case 'setRaid': raid && RR.ops.setRaid(S, raid.id, r.pick(['name', 'inv', 'values', 'buy', 'barter', 'reserve', 'keys', 'keyCost', 'loot', 'finance', 'structs']), r.bool() ? { u: v(), e: v(), l: v() } : v()); break;
+              case 'dupRaid': raid && RR.ops.dupRaid(S, raid.id); break;
+              case 'delRaid': raid && RR.ops.delRaid(S, raid.id); break;
+              case 'addRaidStruct': raid && RR.ops.addRaidStruct(S, raid.id, r.pick(STRUCTS)); break;
+              case 'setRaidStruct': rs && RR.ops.setRaidStruct(S, raid.id, rs.id, r.pick(['fu', 'fe', 'fl', 'defense', 'safes', 'bonus', 'name', 'kind']), v()); break;
+              case 'dupRaidStruct': rs && RR.ops.dupRaidStruct(S, raid.id, rs.id); break;
+              case 'moveRaidStruct': rs && RR.ops.moveRaidStruct(S, raid.id, rs.id, r.pick([-1, 1])); break;
+              case 'delRaidStruct': rs && RR.ops.delRaidStruct(S, raid.id, rs.id); break;
+              case 'addRaidRoute': raid && RR.ops.addRaidRoute(S, raid.id); break;
+              case 'setRaidRoute': rr && RR.ops.setRaidRoute(S, raid.id, rr.id, r.pick(['name', 'toggle']), rs ? rs.id : v()); break;
+              case 'delRaidRoute': rr && RR.ops.delRaidRoute(S, raid.id, rr.id); break;
+            }
+            // simular, comparar o raidear nunca toca la granja real ni sus temporizadores
+            if (op !== 'addSimFromFarm') assert.equal(JSON.stringify([S.farm, S.farms]), farmBefore, `semilla ${seed}: ${op} cambió la granja`);
+          }
         }
       } catch (e) { if (!(e instanceof RR.UserError)) throw new Error(`semilla ${seed}, paso ${k}, ${op}: ${e.stack}`); }
       // la UI siempre normaliza tras cada operación: el resultado debe ser válido y sobrevivir a guardar/cargar
@@ -84,6 +116,12 @@ test('propiedad: secuencias aleatorias de operaciones mantienen el estado válid
       for (const t of S.farm.tables) { const c = RR.calc(t, S.farm); assert.ok(Number.isFinite(c.cycle) && Number.isFinite(c.perHour), `semilla ${seed} calc`); }
       const sum = RR.routeSummary(S.routes.find(x => x.id === S.cur), S.farm);
       assert.ok(Number.isFinite(sum.total), `semilla ${seed} resumen`);
+      // simulador y raideos: siempre números finitos
+      for (const sim of S.sims) { const x = RR.simulate(sim);
+        for (const k of ['effPerHour', 'thPerHour', 'net', 'gross', 'cost', 'investTotal', 'actionsPerHour']) assert.ok(Number.isFinite(x[k]), `semilla ${seed} sim ${k}=${x[k]}`);
+        for (const p of x.curve) assert.ok(Number.isFinite(p.eff) && Number.isFinite(p.th)); }
+      for (const raid of S.raids) { const p = RR.raidPlan(raid); assert.ok(Number.isFinite(p.total) && p.total >= 0 && Number.isFinite(p.seconds), `semilla ${seed} raid`);
+        for (const row of p.rows) { const pts = row.use.u + 3 * row.use.e + 5 * row.use.l + row.miss.u + 3 * row.miss.e + 5 * row.miss.l; assert.ok(pts >= row.defense, `semilla ${seed}: el plan no cubre la defensa`); } }
     }
   }
 });

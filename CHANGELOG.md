@@ -1,5 +1,31 @@
 # Cambios
 
+## 2.4.0 · 2026-11-27
+
+**Calculadoras pasa a ser un centro de herramientas** con cinco secciones (se recuerda la última que usaste): Producción, Simulador, Comparador, Optimizador y Raideos. Nada de esto toca tu granja, tus rutas ni tus temporizadores.
+
+- **Simulador de farmeo.** Escenarios guardados con grupos de estaciones (mesas, bancos de contrabando y laboratorios), su cantidad, mejoras, Tool Box, reactor, precios y costes extra. Se puede crear uno copiando la granja de la ruta activa.
+  - Distingue la producción **teórica** (todo sin pausa) de la **efectiva**: solo ciclos completos, cada cuánto revisas, cuántas horas atiendes y cuántas cajas o reactivos consigues por hora.
+  - Muestra beneficio neto, ingresos y costes por hora, inversión (con o sin investigación), recuperación, ROI, beneficio por estación, aprovechamiento, veces que atiendes, tiempo para un objetivo de dinero, insumos gastados y que faltan, huecos libres y cuellos de botella.
+  - Duraciones de 1, 2, 4, 8, 12 y 24 h o la que quieras, con gráfico de beneficio acumulado y tabla por duración.
+  - Valida los límites del juego (bancos por base, mesas por Grow Room, tier) y ofrece el arreglo con un clic.
+  - Cadenas de producción: el juego no tiene cadenas verificadas (lo que produce una estación no alimenta a otra). El simulador lleva el balance de los insumos comprados y no cuenta dos veces el coste de la caja o de los reactivos.
+- **Comparador.** Varios escenarios a la vez con las mismas horas: tabla con el mejor en beneficio, inversión, recuperación, beneficio por estación, gasto en insumos y menos atención; gráfico de beneficio acumulado y barras.
+- **Optimizador.** Con tu presupuesto, tier, base, Grow Rooms, estaciones y mejoras disponibles, horas y objetivo (más beneficio, menos inversión, recuperar antes, menos atención, más por estación o llegar antes a una cifra), propone las 5 mejores combinaciones válidas, explica por qué y qué requisitos tienen. «Crear escenario» la pasa al simulador. La búsqueda está acotada y no bloquea la ventana.
+- **Calculadora de raideos.** Reconstruye la base objetivo: vallas, casas y anexos (12 tipos con su defensa y huecos de fusible), fusibles Uncommon/Epic/Legendary (no deja poner más de los que caben), bonus del bunker, cajas fuertes y estructuras a mano.
+  - Calcula los decodificadores por tipo y por estructura usando primero tu inventario, los que faltan, la reserva extra, el coste total y el extra, los materiales del trueque Epic (3 Uncommon + $10.000), el tiempo (12 s por decodificador) y las Master Keys.
+  - Rutas de entrada alternativas con la más barata, la de menos decodificadores, la más rápida y las que te llegan con lo que tienes.
+  - Rentabilidad con el valor del botín, punto de equilibrio y horas de farmeo para pagarlo con tu granja o con un escenario.
+  - Avisa de los datos sin confirmar (fórmula, Legendary, tiempo de acceso, precio de la Master Key).
+- **Datos:** tabla de raideos en `catalogo.js` (12 estructuras, decodificadores, fusibles, tiempos) con 8 fuentes nuevas; los fusibles Epic y Legendary pasan a tier 2 y 3 con su investigación. Detalle en DATOS.md.
+- **Interfaz:**
+  - Aviso discreto «Guardado» tras cada cambio.
+  - En ventanas pequeñas, nombre, meta y «Ya tengo» de la ruta empiezan plegados para ver antes los pasos.
+  - Las pestañas y subsecciones se manejan con las flechas del teclado.
+  - El aviso de cómo se combinan las mejoras ya no se repite en la Granja: está junto a su selector.
+  - El Tipo de base ya no se corta.
+- **Formato de datos 4:** se migra solo (copia antes); escenarios y bases a raidear viajan en la copia completa.
+
 ## 2.3.2 · 2026-11-25
 
 - **Arreglado «No se pudo consultar GitHub».** Sin cuenta, GitHub solo admite 60 consultas por hora desde cada conexión a internet; si se agotan, la app ahora mira la versión en otra dirección de GitHub que no tiene ese límite. La descarga de la actualización tampoco usa ya ese servicio limitado.

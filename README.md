@@ -1,6 +1,6 @@
 # Rob Run Planner
 
-Herramienta externa y **manual** para planificar tu progreso en ROB RUN (Kefir): rutas por wipe con tareas, subtareas y dependencias, temporizadores de cultivo, reempaquetado y laboratorio químico con aviso sonoro, y calculadoras de ganancia y mejoras.
+Herramienta externa y **manual** para planificar tu progreso en ROB RUN (Kefir): rutas por wipe con tareas, subtareas y dependencias, temporizadores de cultivo, reempaquetado y laboratorio químico con aviso sonoro, y un centro de herramientas con calculadoras de producción, simulador y comparador de escenarios de farmeo, optimizador de combinaciones y calculadora de decodificadores para raideos.
 
 > **No toca el juego.** No lee memoria, archivos ni red del juego, no mira la pantalla y no automatiza nada. Todo lo apuntas tú. Proyecto de fans, sin relación con Kefir.
 

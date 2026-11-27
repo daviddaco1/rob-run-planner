@@ -115,11 +115,56 @@ try {
   await step('pestañas Calculadoras, Datos y Copias se pintan', async () => {
     for (const t of ['calc', 'datos', 'copias']) await ev(`RRApp.showTab('${t}'); true`);
     await ev(`RRApp.showTab('calc'); true`);
+    await ev(`RRApp.showCalc('prod'); true`);
     assert.ok(await ev(`document.querySelector('#calcBody').textContent.includes('Comparador')`));
-    await setVal('#simKind', 'repack');
     assert.ok(await ev(`document.querySelector('#calcBody').textContent.includes('Se paga en')`));
     await ev(`RRApp.showTab('datos'); true`);
     assert.ok(await ev(`document.querySelectorAll('#datosBody tr').length > 40`));
+    await ev(`RRApp.showTab('ruta'); true`);
+  });
+
+  await step('simulador, comparador y optimizador: escenarios aislados de la granja real', async () => {
+    const farmBefore = await ev('JSON.stringify([RRApp.S.farm, RRApp.S.farms])');
+    await ev(`RRApp.showCalc('sim'); true`);
+    await click('[data-simact=farm]');
+    assert.ok(await ev(`RRApp.S.sims.length === 1 && RRApp.S.sims[0].groups.length === RRApp.S.farm.tables.length`));
+    await click('[data-simadd=plant]');
+    const gid = await ev(`RRApp.S.sims[0].groups.at(-1).id`);
+    await setVal(`[data-gid="${gid}"] [data-t=g]`, '6');
+    await click(`[data-gid="${gid}"] [data-gact=inc]`);
+    assert.equal(await ev(`RRApp.S.sims[0].groups.at(-1).count`), 2);
+    await click('[data-sc-h="8"]');
+    assert.equal(await ev('RRApp.S.sims[0].hours'), 8);
+    assert.ok(await ev(`document.querySelector('#calcBody').textContent.includes('Beneficio neto efectivo')`));
+    assert.ok(await ev(`!!document.querySelector('#calcBody .chart svg polyline')`));
+    assert.equal(await ev('JSON.stringify([RRApp.S.farm, RRApp.S.farms])'), farmBefore, 'el simulador cambió la granja');
+    await click('[data-simact=dup]');
+    await ev(`RRApp.showCalc('cmp'); true`);
+    assert.ok(await ev(`document.querySelectorAll('#calcBody table.cmp tr').length === 3`));
+    await ev(`RRApp.showCalc('opt'); true`);
+    await click('[data-optrun]');
+    await sleep(600);
+    assert.ok(await ev(`document.querySelectorAll('#calcBody .opt-res').length > 0`));
+    await click('[data-optuse="0"]');
+    assert.equal(await ev('RRApp.S.sims.length'), 3);
+    assert.equal(await ev('JSON.stringify([RRApp.S.farm, RRApp.S.farms])'), farmBefore, 'el optimizador cambió la granja');
+  });
+
+  await step('raideos: base objetivo, fusibles por encima del límite rechazados, plan y persistencia', async () => {
+    await ev(`RRApp.showCalc('raid'); true`);
+    await ev(`window.prompt = () => 'Base E2E'; true`);
+    await click('[data-raidact=new]');
+    await setVal('[data-raidadd]', 'small_house');
+    const sid = await ev(`RRApp.S.raids[0].structs[0].id`);
+    await setVal(`[data-rsid="${sid}"] [data-rs=fe]`, '10');
+    assert.equal(await ev('RRApp.S.raids[0].structs[0].fe'), 10);
+    assert.ok(await ev(`document.querySelector('#calcBody').textContent.includes('Decodificadores necesarios')`));
+    await setVal(`[data-rsid="${sid}"] [data-rs=fu]`, '30'); // 10 + 30 > 27 huecos
+    assert.equal(await ev('RRApp.S.raids[0].structs[0].fu'), 0);
+    assert.ok((await toasts()).some(t => t.includes('admite 27 fusibles')));
+    await ev('location.reload(); true'); await sleep(1200);
+    assert.equal(await ev('RRApp.S.raids[0].structs[0].fe'), 10);
+    assert.equal(await ev('RRApp.S.sims.length'), 3);
     await ev(`RRApp.showTab('ruta'); true`);
   });
 
@@ -156,7 +201,7 @@ try {
     await ev(`localStorage.setItem('robrun-rutas-v1', ${JSON.stringify(JSON.stringify(v1))}); true`);
     await go();
     const s = await S();
-    assert.equal(s.schema, 3);
+    assert.equal(s.schema, await ev('RR.SCHEMA'));
     assert.equal(s.included['dos-granjas'], 1);
     assert.ok(await ev(`RRApp.backups().some(b => b.reason.startsWith('Antes de actualizar'))`));
     assert.ok(await ev(`document.querySelector('#notices').textContent.includes('versión nueva')`));

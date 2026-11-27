@@ -3,8 +3,8 @@
 // la interfaz (ruta-escalado.html) solo pinta y llama a estas funciones.
 (function (G) {
   'use strict';
-  const SCHEMA = 3;
-  const APP_VERSION = '2.3.2';
+  const SCHEMA = 4;
+  const APP_VERSION = '2.4.0';
   const REPO = 'daviddaco1/rob-run-planner'; // actualizaciones: releases de este repo de GitHub
   // ¿La etiqueta de release (p. ej. "v2.1.3") es más nueva que la versión instalada?
   function isNewer(tag, cur = APP_VERSION) {
@@ -18,7 +18,8 @@
   const TYPES = ['Dinero', 'Comprar', 'Conseguir item', 'Craftear', 'Taller / mejora', 'Título', 'Plantas', 'Reempaquetado', 'Taller químico', 'Otro'];
   const QUAL = { g: 'Verde', p: 'Morada', o: 'Dorada' };
   const RANK = { g: 1, p: 2, o: 3 };
-  const LIM = { text: 300, notes: 5000, name: 120, subs: 200, steps: 500, routes: 200, stations: 200, log: 30 };
+  const LIM = { text: 300, notes: 5000, name: 120, subs: 200, steps: 500, routes: 200, stations: 200, log: 30,
+    sims: 40, simGroups: 30, simCount: 50, raids: 40, raidStructs: 60, raidRoutes: 20 };
   const cat = () => G.RR_CATALOG || { items: {}, limits: {}, defaults: {} };
 
   // ---------- utilidades seguras ----------
@@ -144,7 +145,12 @@
     for (const r of arr(s.routes).slice(0, LIM.routes)) { const n = normRoute(r); if (!n) continue; if (seen.has(n.id)) n.id = uid(); seen.add(n.id); routes.push(n); }
     if (!routes.length) routes.push(exampleRoute());
     const st = { schema: SCHEMA, routes, cur: routes.some(r => r.id === s.cur) ? s.cur : routes[0].id,
-      included: {}, farm: null, farms: {}, farmOf: '', tab: ['ruta', 'granja', 'calc'].includes(s.tab) ? s.tab : 'ruta' };
+      included: {}, farm: null, farms: {}, farmOf: '', tab: ['ruta', 'granja', 'calc'].includes(s.tab) ? s.tab : 'ruta', sims: [], raids: [] };
+    // Escenarios del simulador y bases a raidear (esquema 4). Aislados de rutas y granjas.
+    for (const [key, norm, max] of [['sims', normSim, LIM.sims], ['raids', normRaid, LIM.raids]]) {
+      const ids = new Set();
+      for (const x of arr(s[key]).slice(0, max)) { const n = norm(x); if (!n) continue; if (ids.has(n.id)) n.id = uid(); ids.add(n.id); st[key].push(n); }
+    }
     if (isObj(s.included)) for (const [k, v] of Object.entries(s.included)) st.included[str(k, 60)] = int(v, 0);
     // Cada ruta (perfil) tiene su granja. st.farm es la de la ruta activa; las demás van en st.farms[idRuta].
     const has = id => routes.some(r => r.id === id);
@@ -197,6 +203,8 @@
       const cur = arr(raw.routes).find(r => isObj(r) && r.id === raw.cur) || arr(raw.routes)[0];
       if (arr(raw.farm?.tables).length) notes.push(`Ahora cada ruta tiene su propia granja. La que tenías queda en la ruta «${str(cur?.name, LIM.name) || 'activa'}»; las demás rutas empiezan con la granja vacía.`);
     }
+    // 3 → 4: añade escenarios del simulador y bases a raidear, vacíos. Rutas, granjas y temporizadores no cambian.
+    if (from < 4 && from >= 3) notes.push('Nuevo en Calculadoras: simulador de farmeo, comparador, optimizador y calculadora de raideos. Tus rutas y granjas siguen igual.');
     return { state: normState(src), from, notes };
   }
 
@@ -443,6 +451,307 @@
     return out;
   }
 
+  // ---------- simulador de farmeo (escenarios aislados: nunca tocan la granja real) ----------
+  const fin = (v, d = 0) => Number.isFinite(v) ? v : d;          // nada de NaN ni Infinity en los resultados
+  const div = (a, b, d = null) => b > 0 && Number.isFinite(a) ? a / b : d;
+  const FARM_KEYS = ['base', 'bags', 'bonus', 'pg', 'pp', 'po', 'stacking', 'tier', 'notoriety', 'baseType'];
+  const INPUT = { repack: 'box', chem: 'reagent' };               // insumo comprado que gasta cada ciclo
+  const UNIT = { plant: 'bolsas', repack: 'cajas', chem: 'cristales' };
+  function normSimGroup(g) {
+    if (!isObj(g)) return null;
+    const s = normStation({ ...g, start: 0, end: 0, log: [] }); if (!s) return null;
+    delete s.start; delete s.end; delete s.notified; delete s.log;
+    s.count = int(g.count ?? 1, 0, LIM.simCount); s.opCost = num(g.opCost, 0, 1e9);
+    return s;
+  }
+  function normSim(x) {
+    if (!isObj(x)) return null;
+    const f = normFarm({ ...x, tables: [] });
+    const opt = v => v === null || v === undefined || v === '' ? null : num(v, 0, 1e6);
+    const sim = { id: str(x.id, 40) || uid(), name: str(x.name, LIM.name).trim() || 'Escenario' };
+    for (const k of FARM_KEYS) sim[k] = f[k];
+    Object.assign(sim, { rooms: int(x.rooms ?? (cat().limits?.rooms_per_base?.value || 2), 1, 20),
+      hours: num(x.hours ?? 4, 0.25, 168), active: num(x.active ?? x.hours ?? 4, 0, 168), check: num(x.check ?? 15, 0, 1440),
+      supplyBox: opt(x.supplyBox), supplyReagent: opt(x.supplyReagent), stockBox: num(x.stockBox, 0, 1e6), stockReagent: num(x.stockReagent, 0, 1e6),
+      research: bool(x.research), goal: num(x.goal ?? 1000000), groups: [] });
+    sim.active = Math.min(sim.active, sim.hours);
+    if (sim.check > 0 && sim.check < 1) sim.check = 1;
+    const seen = new Set();
+    for (const g of arr(x.groups).slice(0, LIM.simGroups)) { const s = normSimGroup(g); if (!s) continue; if (seen.has(s.id)) s.id = uid(); seen.add(s.id); sim.groups.push(s); }
+    return sim;
+  }
+  const simParams = sim => FARM_KEYS.reduce((a, k) => (a[k] = sim[k], a), {});
+  // Granja equivalente (cada grupo repetido «count» veces) para reutilizar las reglas de validateFarm.
+  function simFarm(sim) {
+    return { ...simParams(sim), tables: sim.groups.flatMap(g => Array.from({ length: g.count }, () => g)) };
+  }
+  function validateSim(sim) {
+    const issues = [], seen = new Set(), add = (level, code, msg, groupId = null, fix = null) => {
+      const k = code + '|' + groupId; if (seen.has(k)) return; seen.add(k); issues.push({ level, code, msg, groupId, fix }); };
+    const C = cat(), farm = simFarm(sim);
+    for (const i of validateFarm(farm)) if (!['idle', 'stacking', 'tableCap'].includes(i.code)) add(i.level, i.code, i.msg.replace(/^[^:]+: /, ''), i.stationId);
+    const rooms = sim.rooms, tables = farm.tables.filter(t => t.kind === 'plant').length, cap = (C.limits?.tables_per_room?.value || 6) * rooms;
+    if (tables > cap) add('error', 'tableCap', `Hay ${tables} mesas de cultivo y en ${rooms} Grow Room(s) caben ${cap}. Quita mesas o sube el número de salas.`, null, { kind: 'rooms', value: Math.ceil(tables / (C.limits?.tables_per_room?.value || 6)) });
+    const base = C.bases?.[sim.baseType], benches = farm.tables.filter(t => t.kind === 'repack').length;
+    if (base && benches > base.workbenches) {
+      const better = Object.entries(C.bases).find(([, b]) => b.workbenches >= benches);
+      issues.forEach(i => { if (i.code === 'benchSlots') i.fix = better ? { kind: 'baseType', value: better[0] } : null; });
+    }
+    if (!sim.groups.length) add('info', 'empty', 'Añade estaciones al escenario para ver resultados.');
+    for (const g of sim.groups) if (g.count === 0) add('info', 'zero', `${g.name}: cantidad 0, no cuenta en los resultados.`, g.id);
+    if (sim.active < sim.hours) add('info', 'away', `Estás ${fmtN(sim.hours - sim.active)} h sin atender: las estaciones terminan lo que tienen en marcha y se paran.`);
+    for (const [k, cap2, label] of [['repack', sim.supplyBox, 'cajas de contrabando'], ['chem', sim.supplyReagent, 'lotes de reactivos']])
+      if (cap2 === 0 && !(k === 'repack' ? sim.stockBox : sim.stockReagent) && sim.groups.some(g => g.kind === k && g.count))
+        add('warn', 'noSupply', `Has puesto 0 ${label} por hora y sin reservas: las estaciones de ese tipo no pueden producir.`);
+    return issues;
+  }
+  // Línea de tiempo de UNA estación. El jugador atiende en t=0 y luego cada «check» min mientras está activo (check 0 = atento siempre).
+  // Al atender, rellena la cola: 1 ciclo (mesa, laboratorio) o tantas cajas como huecos (banco + Tool Box). Sin atender, nada se reinicia.
+  function stationTimeline(t, F, H, A, check) {
+    const c = calc(t, F), cyc = c.cycle, Hm = H * 60, Am = A * 60, slots = t.kind === 'repack' ? c.slots : 1;
+    const done = []; let queueEnd = 0, actions = 0, tau = 0;
+    if (!(cyc > 0)) return { done, actions, c };
+    for (let guard = 0; tau <= Am + 1e-9 && guard < 20000 && done.length < 20000; guard++) {
+      const pending = queueEnd > tau + 1e-9 ? Math.ceil((queueEnd - tau) / cyc - 1e-9) : 0, add = slots - pending;
+      if (add > 0) { const from = Math.max(queueEnd, tau); actions++; for (let i = 1; i <= add; i++) if (from + i * cyc <= Hm + 1e-9) done.push(from + i * cyc); queueEnd = from + add * cyc; }
+      const next = check > 0 ? tau + check : queueEnd;
+      if (!(next > tau)) break; tau = next;
+    }
+    return { done, actions, c };
+  }
+  function perCycle(g, c, F) {
+    const sm = 1 + notorietyBonus('smuggler', F.notoriety);
+    if (g.kind === 'plant') return { gross: c.harvest, cost: g.opCost, units: (g.g + g.p + g.o) * F.bags };
+    if (g.kind === 'repack') return { gross: g.sell * sm, cost: g.cost + g.opCost, units: 1 };
+    return c.noData ? { gross: 0, cost: 0, units: 0, noData: true } : { gross: c.harvest + g.cost, cost: g.cost + g.opCost, units: g.crystals };
+  }
+  function researchOf(g) {
+    const K = KINDS[g.kind], ids = [K.item, ...K.upg.filter(k => g.upg[k])];
+    if (g.box) ids.push(g.box); if (g.kind === 'chem') ids.push(`reactor_${g.reactor}`, 'freezer_1');
+    return ids;
+  }
+  function simulate(sim, opts = {}) {
+    const C = cat(), F = simParams(sim), H = num(opts.hours ?? sim.hours, 0.25, 168), A = Math.min(sim.active, H), check = sim.check;
+    const groups = [], events = [];
+    let inv = 0; const research = new Set();
+    for (const g of sim.groups) {
+      if (!g.count) continue;
+      const tl = stationTimeline(g, F, H, A, check), pc = perCycle(g, tl.c, F), net = pc.gross - pc.cost;
+      const r = { id: g.id, name: g.name, kind: g.kind, count: g.count, cycle: tl.c.cycle, slots: tl.c.slots, perCycle: pc, net,
+        thPerHour: fin(div(net * 60, tl.c.cycle, 0) * g.count), thCycles: fin(div(H * 60, tl.c.cycle, 0) * g.count),
+        cycles: 0, gross: 0, cost: 0, units: 0, actions: tl.actions * g.count, noData: !!pc.noData, inv: investment(g) * g.count };
+      inv += r.inv; researchOf(g).forEach(id => research.add(id));
+      for (const at of tl.done) events.push({ at, r, n: g.count });
+      groups.push(r);
+    }
+    // Insumos comprados: cada ciclo gasta 1 caja (banco) o 1 lote de reactivos (laboratorio). Con tope por hora, los primeros ciclos se llevan el insumo.
+    const avail = { box: [sim.stockBox, sim.supplyBox], reagent: [sim.stockReagent, sim.supplyReagent] }, used = { box: 0, reagent: 0 }, short = { box: 0, reagent: 0 };
+    events.sort((a, b) => a.at - b.at);
+    for (const e of events) {
+      const kind = INPUT[e.r.kind]; let n = e.n;
+      if (kind) { const [stock, rate] = avail[kind];
+        if (rate !== null) { const cap = Math.floor(stock + rate * e.at / 60 + 1e-9) - used[kind]; if (cap < n) { short[kind] += n - Math.max(0, cap); n = Math.max(0, cap); } }
+        used[kind] += n; }
+      e.r.cycles += n; e.r.gross += n * e.r.perCycle.gross; e.r.cost += n * e.r.perCycle.cost; e.r.units += n * e.r.perCycle.units; e.acc = n;
+    }
+    const researchCost = sim.research ? [...research].reduce((a, id) => a + (C.items[id]?.research || 0), 0) : 0;
+    const investTotal = inv + researchCost;
+    const gross = groups.reduce((a, r) => a + r.gross, 0), cost = groups.reduce((a, r) => a + r.cost, 0), net = gross - cost;
+    const thPerHour = groups.reduce((a, r) => a + r.thPerHour, 0), structures = groups.reduce((a, r) => a + r.count, 0);
+    const effPerHour = fin(net / H), thCycles = groups.reduce((a, r) => a + r.thCycles, 0), cycles = groups.reduce((a, r) => a + r.cycles, 0);
+    // curva de beneficio acumulado (efectivo, por ciclos completos) frente a la teórica continua
+    const curve = []; let k = 0, acc = 0;
+    for (let i = 0; i <= 48; i++) { const tm = H * 60 * i / 48;
+      while (k < events.length && events[k].at <= tm + 1e-9) { acc += events[k].acc * (events[k].r.perCycle.gross - events[k].r.perCycle.cost); k++; }
+      curve.push({ h: tm / 60, eff: acc - investTotal, th: thPerHour * tm / 60 - investTotal }); }
+    const hit = curve.find(p => p.eff >= 0 && investTotal > 0);
+    const paybackEff = investTotal <= 0 ? 0 : hit ? hit.h : div(investTotal, effPerHour);
+    const benches = groups.filter(r => r.kind === 'repack').reduce((a, r) => a + r.count, 0), tables = groups.filter(r => r.kind === 'plant').reduce((a, r) => a + r.count, 0);
+    const bushes = sim.groups.filter(g => g.kind === 'plant').reduce((a, g) => a + (g.g + g.p + g.o) * g.count, 0);
+    const base = C.bases?.[sim.baseType], tablesCap = (C.limits?.tables_per_room?.value || 6) * sim.rooms;
+    const res = {
+      hours: H, active: A, structures, investment: inv, researchCost, investTotal, gross, cost, net,
+      grossPerHour: fin(gross / H), costPerHour: fin(cost / H), effPerHour, thPerHour, cycles, thCycles,
+      efficiency: thCycles > 0 ? fin(cycles / thCycles) : null, actions: groups.reduce((a, r) => a + r.actions, 0),
+      actionsPerHour: fin(groups.reduce((a, r) => a + r.actions, 0) / H),
+      paybackTh: div(investTotal, thPerHour), paybackEff, paybackExtrapolated: !hit && investTotal > 0,
+      roi: div(net - investTotal, investTotal), perStructure: div(effPerHour, structures), perSlot: div(effPerHour, structures),
+      goalHours: div(sim.goal + investTotal, effPerHour),
+      inputs: { box: used.box, reagent: used.reagent }, shortage: short, inputCostPerHour: fin(cost / H),
+      outputs: groups.reduce((a, r) => (a[UNIT[r.kind]] = (a[UNIT[r.kind]] || 0) + r.units, a), {}),
+      capacity: { benches, benchCap: base?.workbenches || 0, tables, tablesCap, bushes, bushCap: tables * maxBush() },
+      groups, curve, noData: groups.some(r => r.noData),
+    };
+    res.bottlenecks = simBottlenecks(sim, res);
+    return res;
+  }
+  function simBottlenecks(sim, r) {
+    const out = [];
+    if (r.efficiency !== null && r.efficiency < 0.75) out.push({ level: 'warn', msg: `Solo aprovechas el ${Math.round(r.efficiency * 100)}% de la producción teórica: las estaciones esperan a que las atiendas. Revisa más a menudo${sim.groups.some(g => g.kind === 'repack' && !g.box) ? ' o pon Tool Box en los bancos (más cajas en cola)' : ''}.` });
+    for (const [k, label] of [['box', 'cajas de contrabando'], ['reagent', 'lotes de reactivos']])
+      if (r.shortage[k] > 0) out.push({ level: 'warn', msg: `Faltan ${fmtN(r.shortage[k])} ${label}: con el suministro que pusiste, parte de los ciclos no se hacen (estación ociosa). Sube el suministro o quita estaciones de ese tipo.` });
+    if (r.capacity.bushCap > r.capacity.bushes) out.push({ level: 'info', msg: `Tienes ${r.capacity.bushCap - r.capacity.bushes} hueco(s) de planta vacíos en las mesas: plantarlos sube la producción sin comprar mesas.` });
+    if (r.capacity.benchCap > r.capacity.benches && r.capacity.benches > 0) out.push({ level: 'info', msg: `Quedan ${r.capacity.benchCap - r.capacity.benches} hueco(s) de banco de trabajo libres en la base.` });
+    for (const g of r.groups) {
+      if (g.noData) out.push({ level: 'info', msg: `${g.name}: apunta cristales por lote (o el valor del lote); sin eso no se calcula su ganancia.` });
+      else if (g.net <= 0) out.push({ level: 'warn', msg: `${g.name}: cada ciclo pierde dinero (${fmtN(g.net)} $). Revisa precios o quítala.` });
+    }
+    const best = r.groups.map(g => ({ g, h: div(g.net * g.count * 60, g.cycle, 0) })).sort((a, b) => b.h - a.h)[0];
+    if (best && r.groups.length > 1) out.push({ level: 'info', msg: `La que más rinde por hora es ${best.g.name} (${fmtN(best.h)} $/h teóricos con ${best.g.count}).` });
+    return out;
+  }
+  const SIM_HOURS = [1, 2, 4, 8, 12, 24];
+  const simIntervals = sim => SIM_HOURS.map(h => { const r = simulate(sim, { hours: h }); return { hours: h, net: r.net, effPerHour: r.effPerHour, th: r.thPerHour * h, cycles: r.cycles }; });
+  // Comparador: mismos parámetros de tiempo para todos; marca el mejor en cada criterio.
+  function compareSims(sims, hours) {
+    const rows = sims.map(s => ({ id: s.id, name: s.name, r: simulate(s, { hours }), issues: errorsOf(validateSim(s)) }));
+    const pick = (f, better) => { const ok = rows.filter(x => !x.issues.length && Number.isFinite(f(x)) && x.r.structures > 0); if (!ok.length) return null;
+      return ok.reduce((a, b) => better(f(b), f(a)) ? b : a).id; };
+    const hi = (a, b) => a > b, lo = (a, b) => a < b;
+    const best = { profit: pick(x => x.r.effPerHour, hi), invest: pick(x => x.r.investTotal, lo), payback: pick(x => x.r.paybackEff ?? Infinity, lo),
+      slot: pick(x => x.r.perSlot ?? -Infinity, hi), inputs: pick(x => x.r.inputCostPerHour, lo), manual: pick(x => x.r.actionsPerHour, lo) };
+    return { rows, best };
+  }
+  // ---------- optimizador ----------
+  // Las estaciones no se influyen entre sí (salvo límites de huecos y presupuesto), así que se evalúa cada variante una vez
+  // y se combinan sumando. Variantes dominadas (más caras y que rinden menos) se descartan antes de combinar.
+  const subsets = list => list.reduce((acc, x) => acc.concat(acc.map(s => [...s, x])), [[]]);
+  function optimize(o) {
+    const C = cat(), t0 = Date.now(), tier = int(o.tier ?? 1, 1, 3), allowed = id => (C.items[id]?.tier || 1) <= tier && (!o.upgrades || o.upgrades.includes(id));
+    const base = normSim({ ...o, name: 'opt', groups: [] }), notes = [];
+    const variants = { plant: [], repack: [], chem: [] }, q = ['g', 'p', 'o'].includes(o.quality) ? o.quality : 'g';
+    const evalOne = g => { const sim = { ...base, groups: [normSimGroup({ ...g, count: 1 })] }, r = simulate(sim);
+      return { g: sim.groups[0], net: r.effPerHour, th: r.thPerHour, inv: r.investment, actions: r.actionsPerHour, research: researchOf(sim.groups[0]), noData: r.noData }; };
+    if (o.kinds?.plant !== false) for (const up of subsets(KINDS.plant.upg.filter(allowed))) variants.plant.push(evalOne({ kind: 'plant', [q]: maxBush(), upg: Object.fromEntries(up.map(k => [k, true])) }));
+    if (o.kinds?.repack !== false && allowed('contraband_bench')) for (const up of subsets(KINDS.repack.upg.filter(allowed))) for (const box of ['', ...KINDS.repack.slotUpg.filter(allowed)])
+      variants.repack.push(evalOne({ kind: 'repack', box, upg: Object.fromEntries(up.map(k => [k, true])) }));
+    if (o.kinds?.chem !== false) {
+      if (!(num(o.crystals) > 0)) notes.push('Laboratorio fuera: apunta cristales por lote (no hay datos públicos) para incluirlo.');
+      else for (const reactor of [1, 2, 3].filter(r => allowed(`reactor_${r}`))) for (const up of subsets(KINDS.chem.upg.filter(allowed)))
+        variants.chem.push(evalOne({ kind: 'chem', reactor, crystals: num(o.crystals), quality: o.crystalQ || 'u', upg: Object.fromEntries(up.map(k => [k, true])) }));
+    }
+    for (const k of Object.keys(variants)) variants[k] = variants[k].filter(v => v.net > 0 && !variants[k].some(w => w !== v && w.inv <= v.inv && w.net >= v.net && w.actions <= v.actions && (w.inv < v.inv || w.net > v.net || w.actions < v.actions)));
+    const tablesCap = (C.limits?.tables_per_room?.value || 6) * base.rooms, benchCap = C.bases?.[base.baseType]?.workbenches || 0, labCap = int(o.labs ?? 1, 0, 10);
+    const budget = num(o.budget ?? 1e9), maxEval = int(o.maxEval ?? 300000, 10, 2e6), goal = num(o.goal ?? base.goal), start = num(o.start ?? budget);
+    const opts = k => [{ v: null, n: 0 }, ...variants[k].flatMap(v => Array.from({ length: k === 'plant' ? tablesCap : k === 'repack' ? benchCap : labCap }, (_, i) => ({ v, n: i + 1 })))];
+    const score = { profit: c => c.net, invest: c => c.net > 0 ? -c.inv : -Infinity, payback: c => -div(c.inv, c.net, Infinity), manual: c => c.net / Math.max(0.01, c.actions),
+      space: c => c.net / Math.max(1, c.n), goal: c => -div(Math.max(0, goal - (start - c.inv)), c.net, Infinity) }[o.objective] || (c => c.net);
+    const top = []; let evals = 0, truncated = false;
+    outer: for (const a of opts('plant')) for (const b of opts('repack')) for (const ch of opts('chem')) {
+      if (++evals > maxEval) { truncated = true; break outer; }
+      const parts = [a, b, ch].filter(p => p.n);
+      if (!parts.length) continue;
+      const research = new Set(parts.flatMap(p => p.v.research));
+      const inv = parts.reduce((s, p) => s + p.v.inv * p.n, 0) + (o.research ? [...research].reduce((s, id) => s + (C.items[id]?.research || 0), 0) : 0);
+      if (inv > budget) continue;
+      const c = { parts, inv, net: parts.reduce((s, p) => s + p.v.net * p.n, 0), th: parts.reduce((s, p) => s + p.v.th * p.n, 0),
+        actions: parts.reduce((s, p) => s + p.v.actions * p.n, 0), n: parts.reduce((s, p) => s + p.n, 0), research: [...research] };
+      c.score = score(c); if (!Number.isFinite(c.score)) continue;
+      if (top.length < 5 || c.score > top[top.length - 1].score) { top.push(c); top.sort((x, y) => y.score - x.score); if (top.length > 5) top.pop(); }
+    }
+    if (truncated) notes.push(`Búsqueda cortada tras ${fmtN(maxEval)} combinaciones: el resultado es el mejor encontrado, no necesariamente el óptimo.`);
+    const results = top.map(c => {
+      const need = new Set(); for (const id of c.research) { const it = C.items[id]; if (it?.tier > 1) need.add(`land_title_${it.tier}`); }
+      return { ...c, payback: div(c.inv, c.net), goalHours: div(Math.max(0, goal - (start - c.inv)), c.net),
+        groups: c.parts.map(p => ({ ...clone(p.v.g), count: p.n, name: KINDS[p.v.g.kind].short })),
+        requires: [...need], why: optWhy(o.objective, c) };
+    });
+    return { results, evals: Math.min(evals, maxEval), truncated, notes, ms: Date.now() - t0, variants: Object.fromEntries(Object.entries(variants).map(([k, v]) => [k, v.length])) };
+  }
+  function optWhy(obj, c) {
+    const pay = div(c.inv, c.net);
+    const base = `${fmtN(c.net)} $/h efectivos con ${c.n} estación(es), inversión ${fmtN(c.inv)} $${pay != null ? `, se paga en ${pay.toFixed(1)} h` : ''}.`;
+    return ({ profit: 'Es la que más gana por hora dentro del presupuesto. ', invest: 'Es la más barata que da beneficio. ', payback: 'Es la que antes recupera lo invertido. ',
+      manual: 'Es la que más gana por cada vez que tienes que atenderla. ', space: 'Es la que más gana por estación colocada. ', goal: 'Es la que antes llega a tu objetivo de dinero. ' }[obj] || '') + base;
+  }
+
+  // ---------- raideos ----------
+  const DEC = ['l', 'e', 'u'];
+  function normRaid(x) {
+    if (!isObj(x)) return null;
+    const R = cat().raid || {}, ST = R.structures || {};
+    const r = { id: str(x.id, 40) || uid(), name: str(x.name, LIM.name).trim() || 'Base objetivo', structs: [], routes: [],
+      inv: { u: int(x.inv?.u, 0, 9999), e: int(x.inv?.e, 0, 9999), l: int(x.inv?.l, 0, 9999) },
+      values: { u: x.values?.u == null || x.values?.u === '' ? null : num(x.values.u), e: x.values?.e == null || x.values?.e === '' ? null : num(x.values.e), l: x.values?.l == null || x.values?.l === '' ? null : num(x.values.l) },
+      buy: ['u', 'e', 'l'].includes(x.buy) ? x.buy : 'e', barter: x.barter === undefined ? true : bool(x.barter), reserve: num(x.reserve, 0, 500),
+      keys: int(x.keys, 0, 999), keyCost: num(x.keyCost), loot: num(x.loot), finance: str(x.finance, 40), notes: str(x.notes, LIM.notes) };
+    const seen = new Set();
+    for (const s of arr(x.structs).slice(0, LIM.raidStructs)) {
+      if (!isObj(s)) continue;
+      const kind = ST[s.kind] ? s.kind : 'custom', slots = kind === 'custom' ? 200 : ST[kind].fuseSlots;
+      const o = { id: str(s.id, 40) || uid(), kind, name: str(s.name, LIM.name), defense: kind === 'custom' ? int(s.defense, 0, 2000) : ST[kind].defense,
+        fu: 0, fe: 0, fl: 0, bonus: bool(s.bonus), safes: int(s.safes, 0, 99), note: str(s.note) };
+      let left = slots; for (const k of ['fl', 'fe', 'fu']) { o[k] = Math.min(int(s[k], 0, 999), left); left -= o[k]; } // nunca más fusibles que huecos
+      if (seen.has(o.id)) o.id = uid(); seen.add(o.id); r.structs.push(o);
+    }
+    const ids = new Set(r.structs.map(s => s.id)), rseen = new Set();
+    for (const p of arr(x.routes).slice(0, LIM.raidRoutes)) {
+      if (!isObj(p)) continue;
+      const o = { id: str(p.id, 40) || uid(), name: str(p.name, LIM.name).trim() || 'Ruta', steps: [...new Set(arr(p.steps).filter(v => ids.has(v)))] };
+      if (rseen.has(o.id)) o.id = uid(); rseen.add(o.id); r.routes.push(o);
+    }
+    return r; // finance: id de un escenario del simulador (o '' = la granja real); si ya no existe, la UI usa la granja real
+  }
+  const structInfo = s => { const ST = cat().raid?.structures || {}; return s.kind === 'custom' ? { name: s.name || 'Estructura', defense: s.defense, fuseSlots: 200, conf: 'jugador' } : ST[s.kind]; };
+  function structDefense(s) {
+    const R = cat().raid || {}, F = R.fuses || {};
+    return structInfo(s).defense + s.fu * (F.u?.points ?? 1) + s.fe * (F.e?.points ?? 3) + s.fl * (F.l?.points ?? 5) + (s.bonus ? R.settlementBonus?.value || 0 : 0);
+  }
+  const decInfo = () => cat().raid?.decoders || { u: { points: 1, value: 1000 }, e: { points: 3, value: 5000 }, l: { points: 5, value: 40000 } };
+  const decValue = (raid, k) => raid.values[k] ?? decInfo()[k].value;
+  // Coste de conseguir un decodificador que falta: el Epic por trueque son 3 Uncommon + $10.000 (si se permite); el resto, su valor.
+  function acquireCost(raid, k) {
+    const b = decInfo().e.barter;
+    return k === 'e' && raid.barter && b ? b.u * decValue(raid, 'u') + b.cash : decValue(raid, k);
+  }
+  // Mejor reparto para una defensa D con el inventario dado: primero lo que ya tienes (sin desperdiciar puntos si se puede), lo que falte del tipo «buy».
+  function planStructure(D, inv, raid) {
+    const P = { u: decInfo().u.points, e: decInfo().e.points, l: decInfo().l.points }, buy = raid.buy;
+    let best = null;
+    for (let nl = 0; nl <= Math.min(inv.l, Math.ceil(D / P.l)); nl++)
+      for (let ne = 0; ne <= Math.min(inv.e, Math.ceil(Math.max(0, D - nl * P.l) / P.e)); ne++) {
+        const rest = Math.max(0, D - nl * P.l - ne * P.e), nu = Math.min(inv.u, Math.ceil(rest / P.u)), left = Math.max(0, rest - nu * P.u);
+        const miss = Math.ceil(left / P[buy]), pts = nl * P.l + ne * P.e + nu * P.u + miss * P[buy];
+        const cost = nl * decValue(raid, 'l') + ne * decValue(raid, 'e') + nu * decValue(raid, 'u') + miss * acquireCost(raid, buy);
+        const c = { use: { l: nl, e: ne, u: nu }, miss: { u: 0, e: 0, l: 0, [buy]: miss }, waste: pts - D, cost, count: nl + ne + nu + miss };
+        if (!best || c.cost < best.cost - 1e-9 || Math.abs(c.cost - best.cost) < 1e-9 && (c.waste < best.waste || c.waste === best.waste && c.count < best.count)) best = c;
+      }
+    return best || { use: { l: 0, e: 0, u: 0 }, miss: { u: 0, e: 0, l: 0 }, waste: 0, cost: 0, count: 0 };
+  }
+  function raidPlan(raid, routeId) {
+    const R = cat().raid || {}, sec = R.secondsPerDecoder?.value || 12, P = { u: decInfo().u.points, e: decInfo().e.points, l: decInfo().l.points };
+    const path = routeId ? raid.routes.find(p => p.id === routeId)?.steps.map(id => raid.structs.find(s => s.id === id)).filter(Boolean) : raid.structs;
+    const inv = { ...raid.inv }, rows = [], tot = { use: { u: 0, e: 0, l: 0 }, miss: { u: 0, e: 0, l: 0 }, cost: 0, waste: 0, seconds: 0, defense: 0, min: 0, safes: 0 };
+    for (const s of path || []) {
+      const D = structDefense(s), p = planStructure(D, inv, raid);
+      for (const k of DEC) { inv[k] -= p.use[k]; tot.use[k] += p.use[k]; tot.miss[k] += p.miss[k]; }
+      const n = p.count; tot.cost += p.cost; tot.waste += p.waste; tot.seconds += n * sec; tot.defense += D; tot.min += Math.ceil(D / P.l); tot.safes += s.safes;
+      rows.push({ id: s.id, kind: s.kind, name: s.name || structInfo(s).name, defense: D, ...p, seconds: n * sec, safes: s.safes, conf: structInfo(s).conf });
+    }
+    // reserva: un % del total de decodificadores del plan, en el tipo que compras
+    const missType = raid.buy, missing = tot.miss[missType], reserve = Math.ceil((DEC.reduce((a, k) => a + tot.use[k] + tot.miss[k], 0)) * raid.reserve / 100 - 1e-9);
+    const keysMissing = Math.max(0, tot.safes - raid.keys), keysCost = keysMissing * raid.keyCost;
+    const invValue = DEC.reduce((a, k) => a + tot.use[k] * decValue(raid, k), 0);
+    const extra = missing * acquireCost(raid, missType) + reserve * acquireCost(raid, missType) + keysCost; // dinero que hay que poner
+    const total = invValue + extra;                                                                       // incluye el valor de lo que gastas del inventario
+    const b = decInfo().e.barter, materials = missType === 'e' && raid.barter && b ? { u: (missing + reserve) * b.u, cash: (missing + reserve) * b.cash } : null;
+    const warnings = [];
+    const F = R.formula; if (F?.conf && F.conf !== 'confirmado') warnings.push(`Fórmula no confirmada por Kefir: ${F.notes}`);
+    if (missType === 'l' && missing) warnings.push('No hay una forma conocida y fiable de conseguir Decoders Legendary: planifica con Epic o Uncommon.');
+    if (rows.some(r => r.conf === 'jugador')) warnings.push('Hay estructuras con defensa puesta a mano: el cálculo depende de ese dato.');
+    if (tot.safes && !raid.keyCost) warnings.push('Las cajas fuertes necesitan Master Key y su precio no está publicado: apunta lo que te cuesta.');
+    if (R.accessMinutes) warnings.push(`Tras abrir, el dueño puede reparar y echarte; las fuentes dan ${R.accessMinutes.value} min de margen (${R.accessMinutes.alt}).`);
+    const lootProfit = raid.loot ? { loot: raid.loot, profit: raid.loot - total, roi: div(raid.loot - total, total), breakeven: total } : null;
+    return { rows, tot, missing: tot.miss, reserve, reserveType: missType, keysMissing, keysCost, invValue, extra, total, materials,
+      minTheoretical: tot.min, feasible: !missing && !keysMissing, seconds: tot.seconds, warnings, lootProfit };
+  }
+  function compareRaidRoutes(raid) {
+    const rows = (raid.routes.length ? raid.routes : [{ id: '', name: 'Todas las estructuras', steps: raid.structs.map(s => s.id) }]).map(p => ({ id: p.id, name: p.name, plan: raidPlan(raid, p.id || null) }));
+    const best = (f, lo = true) => rows.length ? rows.reduce((a, b) => (lo ? f(b) < f(a) : f(b) > f(a)) ? b : a).id : null;
+    return { rows, best: { decoders: best(x => x.plan.tot.use.u + x.plan.tot.use.e + x.plan.tot.use.l + x.plan.missing.u + x.plan.missing.e + x.plan.missing.l), cost: best(x => x.plan.total),
+      time: best(x => x.plan.seconds), feasible: rows.filter(x => x.plan.feasible).map(x => x.id) } };
+  }
+
   // ---------- operaciones (mutan el estado que reciben; la UI las aplica sobre una copia) ----------
   const route = (S, id = S.cur) => S.routes.find(r => r.id === id) || S.routes[0];
   const ops = {
@@ -506,6 +815,58 @@
     stopStation(S, id) { const t = S.farm.tables.find(x => x.id === id); if (t) { t.start = null; t.end = null; t.notified = false; } },
     logHarvest(S, id, value, now = Date.now()) { const t = S.farm.tables.find(x => x.id === id); if (!t) return; t.log.push({ at: now, value: num(value) }); t.log = t.log.slice(-LIM.log); },
     setFarm(S, field, value) { const f = S.farm, raw = { ...f, [field]: value }; const n = normFarm(raw); for (const k of ['base', 'bags', 'bonus', 'pg', 'pp', 'po', 'stacking', 'tier', 'notoriety', 'baseType']) f[k] = n[k]; },
+    // Escenarios del simulador: copias independientes, nunca tocan S.farm ni sus temporizadores.
+    addSim(S, name = 'Escenario nuevo') { if (S.sims.length >= LIM.sims) throw new UserError(`Máximo ${LIM.sims} escenarios.`);
+      const s = normSim({ ...simParams(S.farm), name: str(name, LIM.name) || 'Escenario nuevo' }); S.sims.push(s); return s; },
+    addSimFromFarm(S, name) { if (S.sims.length >= LIM.sims) throw new UserError(`Máximo ${LIM.sims} escenarios.`);
+      const groups = S.farm.tables.slice(0, LIM.simGroups).map(t => ({ ...clone(t), id: uid(), count: 1 }));
+      const s = normSim({ ...simParams(S.farm), name: name || `Copia de la granja · ${route(S).name}`, groups }); S.sims.push(s); return s; },
+    setSim(S, id, field, value) { const s = S.sims.find(x => x.id === id); if (!s || ['id', 'groups'].includes(field)) return;
+      Object.assign(s, normSim({ ...s, [field]: value }), { id: s.id, groups: s.groups }); },
+    dupSim(S, id) { const s = S.sims.find(x => x.id === id); if (!s) return null; if (S.sims.length >= LIM.sims) throw new UserError(`Máximo ${LIM.sims} escenarios.`);
+      const c = normSim({ ...clone(s), id: uid(), name: `${s.name} (copia)`.slice(0, LIM.name), groups: s.groups.map(g => ({ ...clone(g), id: uid() })) });
+      S.sims.splice(S.sims.indexOf(s) + 1, 0, c); return c; },
+    delSim(S, id) { S.sims = S.sims.filter(x => x.id !== id); for (const r of S.raids) if (r.finance === id) r.finance = ''; },
+    addSimGroup(S, id, kind) { const s = S.sims.find(x => x.id === id); if (!s) return null;
+      if (s.groups.length >= LIM.simGroups) throw new UserError(`Máximo ${LIM.simGroups} grupos por escenario.`);
+      const g = normSimGroup({ kind, name: `${KINDS[kind]?.short || 'Estación'} ${s.groups.filter(x => x.kind === kind).length + 1}`, count: 1 }); s.groups.push(g); return g; },
+    setSimGroup(S, id, gid, field, value) { const s = S.sims.find(x => x.id === id), g = s?.groups.find(x => x.id === gid); if (!g) return;
+      const raw = clone(g);
+      if (KINDS[g.kind].upg.includes(field)) raw.upg[field] = !!value;
+      else if (g.kind === 'plant' && field in RANK) { const others = Object.keys(RANK).filter(k => k !== field).reduce((a, k) => a + g[k], 0); raw[field] = Math.min(int(value), maxBush() - others); }
+      else raw[field] = value;
+      Object.assign(g, normSimGroup(raw), { id: g.id }); },
+    delSimGroup(S, id, gid) { const s = S.sims.find(x => x.id === id); if (s) s.groups = s.groups.filter(g => g.id !== gid); },
+    // Aplica una propuesta del optimizador como escenario nuevo (no toca la granja).
+    addSimFromPlan(S, name, base, groups) { if (S.sims.length >= LIM.sims) throw new UserError(`Máximo ${LIM.sims} escenarios.`);
+      const s = normSim({ ...base, id: uid(), name, groups: groups.map(g => ({ ...clone(g), id: uid() })) }); S.sims.push(s); return s; },
+    // Bases a raidear
+    addRaid(S, name = 'Base objetivo') { if (S.raids.length >= LIM.raids) throw new UserError(`Máximo ${LIM.raids} bases guardadas.`);
+      const r = normRaid({ name }); S.raids.push(r); return r; },
+    setRaid(S, id, field, value) { const r = S.raids.find(x => x.id === id); if (!r || ['id', 'structs', 'routes'].includes(field)) return;
+      Object.assign(r, normRaid({ ...r, [field]: value }), { id: r.id, structs: r.structs, routes: r.routes }); },
+    dupRaid(S, id) { const r = S.raids.find(x => x.id === id); if (!r) return null; if (S.raids.length >= LIM.raids) throw new UserError(`Máximo ${LIM.raids} bases guardadas.`);
+      const c = normRaid({ ...clone(r), id: uid(), name: `${r.name} (copia)`.slice(0, LIM.name) }); S.raids.splice(S.raids.indexOf(r) + 1, 0, c); return c; },
+    delRaid(S, id) { S.raids = S.raids.filter(x => x.id !== id); },
+    addRaidStruct(S, id, kind) { const r = S.raids.find(x => x.id === id); if (!r) return null;
+      if (r.structs.length >= LIM.raidStructs) throw new UserError(`Máximo ${LIM.raidStructs} estructuras por base.`);
+      const s = normRaid({ structs: [{ kind }] }).structs[0]; r.structs.push(s); for (const p of r.routes) p.steps.push(s.id); return s; },
+    setRaidStruct(S, id, sid, field, value) { const r = S.raids.find(x => x.id === id), s = r?.structs.find(x => x.id === sid); if (!s) return;
+      if (['fu', 'fe', 'fl'].includes(field)) { const slots = structInfo(s).fuseSlots, others = ['fu', 'fe', 'fl'].filter(k => k !== field).reduce((a, k) => a + s[k], 0);
+        if (int(value, 0, 999) + others > slots) throw new UserError(`${structInfo(s).name} admite ${slots} fusibles en total y ya tiene ${others} de otros tipos. Quita alguno antes o pon como mucho ${slots - others}.`); }
+      const n = normRaid({ structs: [{ ...s, [field]: value }] }).structs[0]; Object.assign(s, n, { id: s.id }); },
+    dupRaidStruct(S, id, sid) { const r = S.raids.find(x => x.id === id), i = r?.structs.findIndex(x => x.id === sid); if (!r || i < 0) return null;
+      if (r.structs.length >= LIM.raidStructs) throw new UserError(`Máximo ${LIM.raidStructs} estructuras por base.`);
+      const c = normRaid({ structs: [{ ...clone(r.structs[i]), id: uid() }] }).structs[0]; r.structs.splice(i + 1, 0, c); return c; },
+    moveRaidStruct(S, id, sid, dir) { const r = S.raids.find(x => x.id === id), i = r?.structs.findIndex(x => x.id === sid); if (!r || i < 0) return;
+      const j = i + (dir < 0 ? -1 : 1); if (j >= 0 && j < r.structs.length) [r.structs[i], r.structs[j]] = [r.structs[j], r.structs[i]]; },
+    delRaidStruct(S, id, sid) { const r = S.raids.find(x => x.id === id); if (!r) return; r.structs = r.structs.filter(x => x.id !== sid); for (const p of r.routes) p.steps = p.steps.filter(x => x !== sid); },
+    addRaidRoute(S, id, name) { const r = S.raids.find(x => x.id === id); if (!r) return null; if (r.routes.length >= LIM.raidRoutes) throw new UserError(`Máximo ${LIM.raidRoutes} rutas por base.`);
+      const p = { id: uid(), name: str(name, LIM.name) || `Ruta ${r.routes.length + 1}`, steps: r.structs.map(s => s.id) }; r.routes.push(p); return p; },
+    setRaidRoute(S, id, pid, field, value) { const r = S.raids.find(x => x.id === id), p = r?.routes.find(x => x.id === pid); if (!p) return;
+      if (field === 'name') p.name = str(value, LIM.name).trim() || 'Ruta';
+      else if (field === 'toggle') p.steps = p.steps.includes(value) ? p.steps.filter(x => x !== value) : r.structs.filter(s => p.steps.includes(s.id) || s.id === value).map(s => s.id); },
+    delRaidRoute(S, id, pid) { const r = S.raids.find(x => x.id === id); if (r) r.routes = r.routes.filter(p => p.id !== pid); },
     // Arreglos sugeridos por la validación
     applyFix(S, fix) {
       if (!fix) return;
@@ -619,6 +980,17 @@
       if (t.start && !(t.end > t.start)) bad.push('temporizador');
       for (const k of ['base', 'sell', 'cost', 'value']) if (k in t && !Number.isFinite(t[k])) bad.push('número estación');
     }
+    const sids = new Set();
+    for (const s of S.sims || []) {
+      if (sids.has(s.id)) bad.push('id de escenario repetido'); sids.add(s.id);
+      if (![s.hours, s.active, s.check].every(Number.isFinite) || s.active > s.hours) bad.push('tiempos de escenario');
+      for (const g of s.groups) if (!KINDS[g.kind] || !(g.count >= 0) || g.kind === 'plant' && g.g + g.p + g.o > maxBush()) bad.push('grupo de escenario');
+    }
+    for (const r of S.raids || []) {
+      const ids = new Set(r.structs.map(s => s.id));
+      for (const s of r.structs) if (s.fu + s.fe + s.fl > structInfo(s).fuseSlots || !Number.isFinite(structDefense(s))) bad.push('fusibles');
+      for (const p of r.routes) if (p.steps.some(x => !ids.has(x))) bad.push('ruta de raideo rota');
+    }
     return bad;
   }
 
@@ -626,7 +998,9 @@
     normStep, normRoute, normStation, normFarm, normState, migrate, exampleRoute,
     plantCount, baseStatus, statuses, ordered, nextStep, isComplete, findCycles, validateRoute, validateFarm, errorsOf, errorKeys,
     calc, investment, upgradeOptions, farmTotals, stationComparison, routeSummary, bottlenecks,
-    ops, UserError, itemNote, itemSubs, parseImport, exportRoute, syncIncluded, addIncludedVersion, timerList, checkInvariants };
+    ops, UserError, itemNote, itemSubs, parseImport, exportRoute, syncIncluded, addIncludedVersion, timerList, checkInvariants,
+    normSim, normSimGroup, validateSim, simulate, simIntervals, compareSims, stationTimeline, optimize, SIM_HOURS, UNIT,
+    normRaid, structDefense, structInfo, planStructure, raidPlan, compareRaidRoutes, acquireCost };
   G.RR = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
